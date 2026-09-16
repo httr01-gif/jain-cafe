@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>자인 카페 주문 접수</title>
+<style>
+:root{
+  --ink:#231713; --ink-soft:#4A3830;
+  --paper:#FBF6EF; --paper-2:#F2E8DC; --line:#DCCBB8;
+  --roast:#B4511E; --amber:#E4A33A; --leaf:#2F6F5E; --milk:#FFFFFF;
+  --shadow:0 2px 0 rgba(35,23,19,.12); --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',system-ui,-apple-system,'Malgun Gothic',sans-serif;
+  font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--roast);outline-offset:2px}
+
+.switcher{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;
+  padding:8px 14px;background:var(--ink);color:var(--paper)}
+.switcher .brand{font-weight:800;letter-spacing:-.02em;margin-right:auto;font-size:15px}
+.switcher .brand span{opacity:.55;font-weight:500}
+.switcher button{border:1px solid rgba(251,246,239,.3);background:transparent;color:var(--paper);
+  padding:8px 14px;border-radius:999px;font-weight:700;font-size:14px}
+.switcher button[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+
+.view{display:none}
+.view.is-on{display:block}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 130px}
+h2{font-size:22px;margin:0 0 4px;letter-spacing:-.02em}
+.sub{margin:0 0 18px;color:var(--ink-soft);font-size:15px}
+.field{margin:26px 0 0}
+.field > h3{font-size:16px;margin:0 0 10px;font-weight:800;display:flex;align-items:baseline;gap:8px}
+.field > h3 em{font-style:normal;font-weight:600;font-size:14px;color:var(--ink-soft)}
+
+.notice{border-radius:var(--r);padding:16px 18px;margin:0 0 4px;border:2px solid var(--ink)}
+.notice.open{background:#E9F3EE;border-color:var(--leaf)}
+.notice.closed{background:#F6EDE2}
+.notice b{display:block;font-size:18px;margin-bottom:4px}
+.notice p{margin:0;font-size:15px;color:var(--ink-soft)}
+.closed-mask{opacity:.35;pointer-events:none}
+
+.menu{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:520px){.menu{grid-template-columns:repeat(2,1fr)}}
+.menu button{border:2px solid var(--line);background:var(--milk);border-radius:var(--r);
+  padding:14px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  font-weight:700;color:var(--ink);box-shadow:var(--shadow)}
+.menu button[aria-pressed="true"]{border-color:var(--roast);background:#FFF4EC}
+.menu button[disabled]{opacity:.4;filter:grayscale(1);cursor:not-allowed}
+.menu .soldout{font-size:13px;font-weight:700;color:var(--roast)}
+.menu svg{width:46px;height:52px;display:block}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{border:2px solid var(--line);background:var(--milk);color:var(--ink);
+  padding:12px 18px;border-radius:999px;font-weight:700;min-height:52px}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chips button small{display:block;font-size:12px;font-weight:600;opacity:.65}
+
+.qty{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.qty button.rnd{width:60px;height:60px;border-radius:50%;border:2px solid var(--ink);
+  background:var(--milk);font-size:28px;font-weight:800;line-height:1;color:var(--ink)}
+.qty output{font-size:34px;font-weight:800;min-width:56px;text-align:center;font-variant-numeric:tabular-nums}
+.addbtn{margin-left:auto;border-radius:12px;padding:0 22px;height:60px;background:var(--ink);
+  color:var(--paper);border:none;font-weight:800}
+
+.tumbler{display:flex;align-items:center;gap:12px;border:2px solid var(--line);background:var(--milk);
+  border-radius:var(--r);padding:14px 16px;margin-top:12px;cursor:pointer;font-weight:700}
+.tumbler input{width:26px;height:26px;accent-color:var(--leaf)}
+.tumbler span small{display:block;font-size:13px;font-weight:600;color:var(--ink-soft)}
+
+input[type="text"]{width:100%;padding:16px;border:2px solid var(--line);border-radius:var(--r);
+  font-size:19px;font-family:inherit;background:var(--milk);color:var(--ink)}
+input[type="text"]::placeholder{color:#A8968A}
+
+.cart{border:2px dashed var(--line);border-radius:var(--r);padding:14px;background:var(--paper-2)}
+.cart.empty{color:var(--ink-soft);text-align:center;font-size:15px;padding:22px 14px}
+.cart ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.cart li{display:flex;align-items:center;gap:8px;background:var(--milk);border-radius:10px;padding:12px 14px;flex-wrap:wrap}
+.cart li .n{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums}
+.cart li button{border:none;background:transparent;color:var(--roast);font-weight:800;padding:8px 6px;min-height:44px}
+.tag{font-size:13px;font-weight:800;padding:3px 9px;border-radius:999px;background:var(--paper-2)}
+.tag.ice{background:#E3EFF5;color:#1E5674}
+.tag.hot{background:#F8E2D6;color:#8E3A12}
+.tag.tum{background:#E4EFDC;color:#2E5A22}
+
+.send{position:fixed;left:0;right:0;bottom:0;z-index:40;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,var(--paper) 70%,rgba(251,246,239,0))}
+.send button{width:100%;max-width:728px;margin:0 auto;display:block;border:none;border-radius:var(--r);
+  background:var(--roast);color:#fff;padding:20px;font-size:20px;font-weight:800;box-shadow:0 3px 0 #8B3D15}
+.send button:disabled{background:#C9BCB0;box-shadow:0 3px 0 #B0A296;cursor:not-allowed}
+.hint{text-align:center;font-size:14px;color:var(--roast);margin:0 0 8px;font-weight:700;min-height:20px}
+
+.mine{margin-top:26px;display:flex;flex-direction:column;gap:10px}
+.mycard{border:2px solid var(--ink);border-radius:var(--r);background:var(--milk);padding:16px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.mycard .no{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;
+  background:var(--ink);color:var(--paper);border-radius:10px;padding:6px 12px}
+.mycard .txt{flex:1;min-width:140px}
+.mycard .txt b{display:block;font-size:17px}
+.mycard .txt span{font-size:14px;color:var(--ink-soft)}
+.state{font-weight:800;font-size:15px;padding:8px 14px;border-radius:999px;white-space:nowrap}
+.state.new{background:#FCF0D8;color:#8A6212}
+.state.making{background:#DDEDE8;color:#1F5648}
+.state.done{background:#E4EFDC;color:#2E5A22}
+.mycard .cancel{border:2px solid var(--line);background:var(--milk);border-radius:10px;padding:10px 12px;font-weight:700;color:var(--ink-soft)}
+
+.b-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 20px;background:var(--ink);color:var(--paper)}
+.b-top h2{color:var(--paper);font-size:20px;margin:0}
+.b-top .counts{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.pill{background:rgba(251,246,239,.12);border-radius:999px;padding:8px 14px;font-weight:700;font-size:15px}
+.pill b{font-variant-numeric:tabular-nums;font-size:18px}
+.ghost{border:1px solid rgba(251,246,239,.35);background:transparent;color:var(--paper);
+  border-radius:999px;padding:10px 16px;font-weight:700;font-size:14px}
+
+.nowbar{padding:14px 20px;background:var(--paper-2);border-bottom:2px solid var(--line);
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.nowbar b{font-size:17px}
+.nowbar .route{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.nowbar .route span{background:var(--milk);border:1px solid var(--line);border-radius:999px;
+  padding:6px 12px;font-size:14px;font-weight:700}
+
+.armbar{margin:0;padding:18px 20px;background:var(--amber);color:#3A2A08;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.armbar p{margin:0;font-weight:700;flex:1;min-width:220px}
+.armbar button{border:none;border-radius:12px;background:var(--ink);color:var(--paper);padding:16px 24px;font-weight:800;font-size:18px}
+
+.board{padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.empty-board{padding:70px 20px;text-align:center;color:var(--ink-soft)}
+.empty-board b{display:block;font-size:19px;color:var(--ink);margin-bottom:6px}
+.ticket{border:3px solid var(--ink);border-radius:16px;background:var(--milk);padding:16px;
+  display:flex;flex-direction:column;gap:12px}
+.ticket.making{border-color:var(--leaf);background:#F4FAF8}
+.ticket.enter{animation:slide .35s ease-out}
+@keyframes slide{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}
+.t-head{display:flex;align-items:center;gap:10px}
+.t-head .no{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+.t-head .time{margin-left:auto;font-size:14px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.t-who{font-size:20px;font-weight:800;line-height:1.3}
+.t-who span{display:block;font-size:17px;font-weight:700;color:var(--roast);margin-top:2px}
+.t-items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.t-items li{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;
+  background:var(--paper-2);border-radius:10px;padding:10px 12px;flex-wrap:wrap}
+.t-items li .n{margin-left:auto;font-size:23px;font-weight:800}
+.t-act{display:flex;gap:8px}
+.t-act button{flex:1;border:none;border-radius:12px;padding:18px 10px;font-size:18px;font-weight:800;color:#fff}
+.t-act .go{background:var(--leaf);box-shadow:0 3px 0 #1F5648}
+.t-act .fin{background:var(--roast);box-shadow:0 3px 0 #8B3D15}
+.t-act .say{flex:0 0 64px;background:var(--ink);box-shadow:0 3px 0 #0F0906;font-size:22px}
+
+.panel{padding:0 20px 30px}
+.panel h3{font-size:16px;margin:22px 0 10px}
+.panel ul.done{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.panel ul.done li{background:var(--paper-2);border-radius:999px;padding:8px 14px;font-size:15px;font-weight:700;color:var(--ink-soft)}
+
+.mlist{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:8px}
+.mlist li{display:flex;align-items:center;gap:10px;background:var(--milk);border:2px solid var(--line);
+  border-radius:12px;padding:10px 12px;flex-wrap:wrap}
+.mlist li svg{width:34px;height:38px}
+.mlist li .nm{font-weight:800}
+.mlist li .tp{font-size:13px;color:var(--ink-soft);font-weight:700}
+.mlist li .sp{margin-left:auto;display:flex;gap:6px}
+.mlist li button{border:2px solid var(--line);background:var(--paper);border-radius:10px;
+  padding:10px 14px;font-weight:700;font-size:14px;color:var(--ink)}
+.mlist li button.on{background:var(--roast);border-color:var(--roast);color:#fff}
+.mlist li button.del{color:var(--roast)}
+
+.mform{border:2px dashed var(--line);border-radius:12px;padding:14px;background:var(--paper-2);
+  display:flex;flex-direction:column;gap:10px}
+.mform .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.mform input[type="text"]{flex:1;min-width:180px;padding:12px;font-size:17px}
+.mform select{padding:12px;border:2px solid var(--line);border-radius:10px;font-size:16px;
+  font-family:inherit;background:var(--milk);color:var(--ink)}
+.mform .swatch{width:38px;height:38px;border-radius:50%;border:3px solid var(--line);cursor:pointer;padding:0}
+.mform .swatch[aria-pressed="true"]{border-color:var(--ink)}
+.mform .save{border:none;background:var(--leaf);color:#fff;border-radius:10px;padding:14px 22px;font-weight:800}
+
+.flash{position:fixed;inset:0;border:12px solid var(--amber);pointer-events:none;opacity:0;z-index:60}
+.flash.on{animation:fl 1.1s ease-out}
+@keyframes fl{0%,100%{opacity:0}12%{opacity:1}45%{opacity:.25}70%{opacity:.9}}
+@media (prefers-reduced-motion:reduce){.ticket.enter,.flash.on{animation:none}.flash.on{opacity:0}}
+
+.netdot{font-size:12px;font-weight:700;padding:6px 11px;border-radius:999px;
+  background:rgba(251,246,239,.16);color:var(--paper);white-space:nowrap}
+.netdot.bad{background:var(--roast);color:#fff}
+.netdot.local{background:var(--amber);color:#3A2A08}
+.switcher.locked #tabOrder,.switcher.locked #tabBar{display:none}
+
+.qtyhint{margin:10px 0 0;font-size:14px;color:var(--ink-soft);font-weight:700}
+.qtyhint b{color:var(--ink)}
+.qtyhint button{margin-left:8px;border:2px solid var(--line);background:var(--milk);
+  border-radius:10px;padding:8px 14px;font-weight:800;color:var(--roast);min-height:44px}
+
+.recvnote{margin:12px 0 0;padding:14px 16px;border-radius:var(--r);background:#E9F3EE;
+  border:2px solid var(--leaf);font-size:15px;font-weight:600;color:var(--ink-soft);line-height:1.5}
+.recvnote b{color:var(--ink)}
+
+.chips.slots button{font-variant-numeric:tabular-nums;min-width:140px;justify-content:center}
+.chips.slots button[disabled]{opacity:.45;background:var(--paper-2);cursor:not-allowed;
+  text-decoration:line-through;text-decoration-color:rgba(35,23,19,.35)}
+.chips.slots button small{text-decoration:none}
+
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);z-index:70;
+  background:var(--ink);color:var(--paper);padding:14px 20px;border-radius:12px;
+  font-weight:700;max-width:88%;text-align:center;opacity:0;pointer-events:none;
+  transition:opacity .2s;box-shadow:0 6px 20px rgba(35,23,19,.25)}
+.toast.on{opacity:1}
+
+.timeline{display:flex;gap:8px;overflow-x:auto;padding:14px 20px;background:var(--paper-2);
+  border-bottom:2px solid var(--line)}
+.timeline span{flex:0 0 auto;border:2px solid var(--line);background:var(--milk);border-radius:10px;
+  padding:8px 14px;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;text-align:center}
+.timeline span b{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-top:2px}
+.timeline span.has{background:#F8E2D6;border-color:var(--roast)}
+.timeline span.has b{color:#8E3A12}
+.timeline span.now{outline:3px solid var(--leaf);outline-offset:1px}
+.timeline span.past{opacity:.4}
+
+.t-head .slot{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;
+  background:var(--paper-2);border-radius:8px;padding:5px 10px;margin-left:auto}
+.ticket.tum{border-color:var(--amber);background:#FFFBF2}
+.ticket.ready{border-color:var(--amber);background:#FFF6E4}
+.state.ready{background:#FBE7C2;color:#7A5210}
+.t-act .keep{background:var(--amber);color:#3A2A08;box-shadow:0 3px 0 #B37D18}
+
+.tumzone{padding:0 0 10px}
+.tumzone h3{margin:6px 20px 0;font-size:17px;color:var(--ink-soft)}
+.mycard.call{border-color:var(--amber);background:#FFF6E4}
+.mycard .txt em{display:block;font-style:normal;font-size:14px;font-weight:800;color:#8E3A12;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="switcher">
+  <div class="brand">자인 카페 <span>주문 접수</span></div>
+  <span class="netdot" id="netdot">연결 확인 중</span>
+  <button id="tabOrder" aria-pressed="true">주문 화면</button>
+  <button id="tabBar" aria-pressed="false">바리스타 화면</button>
+</div>
+
+<!-- ===== 주문 화면 ===== -->
+<section class="view is-on" id="viewOrder">
+  <div class="wrap">
+    <h2>커피 주문하기</h2>
+    <p class="sub">바리스타 실습 시간에만 주문을 받습니다. 만들기와 배달도 같은 시간에 이루어집니다.</p>
+
+    <div class="notice" id="notice"></div>
+
+    <div id="orderForm">
+      <div class="field">
+        <h3>1. 받을 곳</h3>
+        <input type="text" id="placeFree" placeholder="예: 초1-1, 보건실, 교무실" autocomplete="off" maxlength="24" list="placeList">
+        <datalist id="placeList"></datalist>
+      </div>
+
+      <div class="field">
+        <h3>2. 받는 방법</h3>
+        <div class="chips" id="recvChips"></div>
+        <p class="recvnote" id="recvNote" hidden></p>
+      </div>
+
+      <div class="field">
+        <h3>3. 받는 시간 <em>15분 단위로 고릅니다</em></h3>
+        <div class="chips slots" id="slotChips"></div>
+      </div>
+
+      <div class="field">
+        <h3>4. 메뉴 고르기</h3>
+        <div class="menu" id="menuGrid"></div>
+      </div>
+
+      <div class="field" id="optField" hidden>
+        <h3>5. 온도 <em id="optName"></em></h3>
+        <div class="chips" id="optChips"></div>
+      </div>
+
+      <div class="field">
+        <h3>6. 몇 잔</h3>
+        <div class="qty">
+          <button class="rnd" id="qMinus" aria-label="한 잔 줄이기">−</button>
+          <output id="qNum">1</output>
+          <button class="rnd" id="qPlus" aria-label="한 잔 늘리기">+</button>
+          <button class="addbtn" id="addBtn">담기</button>
+        </div>
+        <p class="qtyhint" id="qtyHint"></p>
+      </div>
+
+      <div class="field">
+        <h3>담은 메뉴</h3>
+        <div class="cart empty" id="cart">아직 담은 메뉴가 없습니다.</div>
+      </div>
+
+      <div class="field">
+        <h3>7. 주문자 이름</h3>
+        <input type="text" id="who" placeholder="예: 김인식 선생님" autocomplete="off" maxlength="20">
+      </div>
+    </div>
+
+    <div class="mine" id="mine"></div>
+  </div>
+
+  <div class="send">
+    <p class="hint" id="hint"></p>
+    <button id="sendBtn">주문 보내기</button>
+  </div>
+</section>
+
+<!-- ===== 바리스타 화면 ===== -->
+<section class="view" id="viewBar">
+  <div class="b-top">
+    <h2>바리스타실 주문판</h2>
+    <div class="counts">
+      <div class="pill">새 주문 <b id="cNew">0</b></div>
+      <div class="pill">만드는 중 <b id="cMaking">0</b></div>
+      <div class="pill">텀블러 대기 <b id="cTum">0</b></div>
+      <div class="pill">오늘 완료 <b id="cDone">0</b></div>
+    </div>
+    <span class="netdot" id="netdot2">연결 확인 중</span>
+    <button class="ghost" id="testBtn">연습 주문 넣기</button>
+  </div>
+
+  <div class="nowbar" id="nowbar"></div>
+
+  <div class="armbar" id="armbar">
+    <p>화면을 켜 두려면 먼저 버튼을 눌러 주세요. 알림 소리와 음성 안내가 켜집니다.</p>
+    <button id="armBtn">주문 받기 시작</button>
+  </div>
+
+  <div class="timeline" id="timeline"></div>
+
+  <div class="board" id="board"></div>
+
+  <div class="tumzone" id="tumzone" hidden>
+    <h3>텀블러 기다리는 중</h3>
+    <div class="board" id="tumBoard"></div>
+  </div>
+
+  <div class="panel">
+    <h3>완료한 주문</h3>
+    <ul class="done" id="doneList"><li>아직 없습니다</li></ul>
+
+    <h3>메뉴 관리</h3>
+    <ul class="mlist" id="menuList"></ul>
+    <div class="mform">
+      <div class="row">
+        <input type="text" id="newName" placeholder="새 메뉴 이름" maxlength="12" autocomplete="off">
+        <select id="newTemp">
+          <option value="both">따뜻하게와 차갑게</option>
+          <option value="hot">따뜻하게만</option>
+          <option value="ice">차갑게만</option>
+        </select>
+      </div>
+      <div class="row" id="swatches"></div>
+      <div class="row"><button class="save" id="addMenuBtn">메뉴 추가하기</button></div>
+    </div>
+
+    <h3>연습 설정</h3>
+    <div class="chips"><button id="freeBtn" aria-pressed="false">수업 시간이 아니어도 주문 받기</button></div>
+  </div>
+</section>
+
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============================================================
+   설정 구역 — 학교 상황에 맞게 이 부분만 고치면 됩니다
+   ============================================================ */
+
+/* 1) Apps Script 웹 앱 주소를 여기에 붙여넣으세요.
+      비워 두면 이 기기 안에서만 도는 연습 모드로 동작합니다. */
+const API = 'https://script.google.com/macros/s/AKfycbxgI_iAPHbtA82fG9aXlWcT493RtwZZxCkrsJc6xePxiYubHPFdna04hfh9gXhsykinOQ/exec';
+
+/* 2) 교시별 시각 — 40분 수업, 쉬는시간 5분, 점심 50분 */
+const PERIODS = {
+  1:['09:20','10:00'], 2:['10:05','10:45'], 3:['10:50','11:30'], 4:['11:35','12:15'],
+  5:['13:05','13:45'], 6:['13:50','14:30'], 7:['14:35','15:15']
+};
+
+/* 수령 시간 규칙
+   PREP: 수업 시작 후 준비 시간 (이 동안은 만들지 않음)
+   WRAP: 수업 종료 전 정리 시간 (이 동안은 만들지 않음)
+   UNIT: 수령 시간 단위(분). 단위에 못 미치는 자투리는 버림 */
+const PREP = 10, WRAP = 5, UNIT = 15;
+
+/* 3) 조별 주문 가능 주간 — 시작 월요일부터 2주 간격으로 자동 계산합니다.
+      2026-09-14 주간이 1조, 그다음 주가 2조입니다. */
+const WEEK_START = { '1조':'2026-09-14', '2조':'2026-09-21' };
+const TERM_END   = '2027-02-28';
+
+/* 4) 조별 배정표 — day 1=월 ... 5=금, 뒤의 숫자는 인원수 */
+const SLOTS = {
+  '1조':[
+    {day:2, periods:[2,3], places:[['교무실(늘봄)',2],['교무실(교무행정)',2],['식생활교육실',6]]},
+    {day:3, periods:[1,2], places:[['보건실',2],['통학버스 운영자실',5],['상담실',1]]},
+    {day:3, periods:[3,4], places:[['동승보호자실',5],['유치원',2]]},
+    {day:4, periods:[1,2], places:[['초1-1',3],['초1-2',3]]},
+    {day:4, periods:[3,4], places:[['초2-1',3],['초2-2',2]]},
+    {day:5, periods:[1,2], places:[['초3-1',4],['초3-2',3]]},
+    {day:5, periods:[3,4], places:[['초3-3',3],['초3-4',4]]},
+    {day:5, periods:[6,7], places:[['중3-2',5]]}
+  ],
+  '2조':[
+    {day:1, periods:[5,6], places:[['행정실',0]]},
+    {day:2, periods:[2,3], places:[['초4-1',2],['초4-2',3]]},
+    {day:3, periods:[1,2], places:[['초5-1',4],['초5-2',3]]},
+    {day:3, periods:[3,4], places:[['초6-1',4],['초6-2',3]]},
+    {day:4, periods:[1,2], places:[['초6-3',3],['체력단련실',1]]},
+    {day:4, periods:[3,4], places:[['중1-1',4],['중1-2',4]]},
+    {day:5, periods:[1,2], places:[['중2-1',4],['중2-2',4]]},
+    {day:5, periods:[3,4], places:[['중3-1',3],['중3-4',3]]},
+    {day:5, periods:[6,7], places:[['중3-3',4]]}
+  ]
+};
+
+/* 5) 서버가 연결되기 전에 보여 줄 기본 메뉴 (연결되면 시트 내용으로 바뀝니다) */
+const SEED_MENU = [
+  {key:'ame', name:'아메리카노', liquid:'#3E2417', foam:false, temps:['따뜻하게','차갑게']},
+  {key:'lat', name:'카페라떼',   liquid:'#C29A6C', foam:true,  temps:['따뜻하게','차갑게']},
+  {key:'van', name:'바닐라라떼', liquid:'#DCC08F', foam:true,  temps:['따뜻하게','차갑게']},
+  {key:'cap', name:'카푸치노',   liquid:'#B98A5E', foam:true,  temps:['따뜻하게']},
+  {key:'cho', name:'초코라떼',   liquid:'#5C382A', foam:true,  temps:['따뜻하게','차갑게']},
+  {key:'yuz', name:'유자차',     liquid:'#E4A33A', foam:false, temps:['따뜻하게']}
+];
+const SWATCH = ['#3E2417','#C29A6C','#DCC08F','#5C382A','#E4A33A','#C2405A','#2F6F5E','#8FB8C9'];
+const DAYNAME = ['일','월','화','수','목','금','토'];
+
+/* ============================================================
+   여기서부터는 고치지 않아도 됩니다
+   ============================================================ */
+
+const ONLINE = !!API;
+function $(id){ return document.getElementById(id); }
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+const ME = Math.random().toString(36).slice(2);
+let state = { rev:'0', day:'', orders:[], menu:JSON.parse(JSON.stringify(SEED_MENU)), soldOut:{}, free:false };
+let myIds = [];
+let pick  = { key:null, temp:null, qty:1, cart:[], head:0, recv:'배달', slot:null };
+let newColor = SWATCH[0];
+let seen = new Set();
+let armed = false, ac = null, wakeLock = null;
+let curView = 'order', busy = false, localSeq = 0;
+
+/* 상태 이름 */
+const NEXT  = { new:'making', making:null, ready:'done' };
+const LABEL_MINE = { new:'접수했어요', making:'만들고 있어요',
+                     ready:'만들어 두었어요', done:'다 받았어요' };
+const LABEL_BAR  = { new:'새 주문', making:'만드는 중', ready:'텀블러 기다림' };
+
+/* ===== 날짜와 시간 ===== */
+function ymd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function mondayOf(d){ const x=new Date(d); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); x.setHours(0,0,0,0); return x; }
+function mins(t){ const p=String(t).split(':'); return (+p[0])*60+(+p[1]); }
+function hm(m){ return ('0'+Math.floor(m/60)).slice(-2)+':'+('0'+(m%60)).slice(-2); }
+
+function teamOf(date){
+  const mon = mondayOf(date), end = new Date(TERM_END+'T23:59:59');
+  if (mon > end) return null;
+  for (const t in WEEK_START){
+    const s = mondayOf(new Date(WEEK_START[t]+'T00:00:00'));
+    const diff = Math.round((mon - s) / 604800000);
+    if (diff >= 0 && diff % 2 === 0) return t;
+  }
+  return null;
+}
+function slotSpan(s){ return [mins(PERIODS[s.periods[0]][0]), mins(PERIODS[s.periods[s.periods.length-1]][1])]; }
+function slotLabel(s){ return DAYNAME[s.day]+'요일 '+s.periods.join('~')+'교시 ('+hm(slotSpan(s)[0])+'~'+hm(slotSpan(s)[1])+')'; }
+
+/* 블록의 교시별 제조 가능 구간 — 첫 교시는 앞에서 PREP, 마지막 교시는 뒤에서 WRAP 를 뺀다 */
+function makeWindows(s){
+  const ps = s.periods, out = [];
+  ps.forEach(function(p, i){
+    let a = mins(PERIODS[p][0]), b = mins(PERIODS[p][1]);
+    if(i === 0) a += PREP;
+    if(i === ps.length - 1) b -= WRAP;
+    if(b > a) out.push([a, b]);
+  });
+  return out;
+}
+/* 15분 단위 수령 시간 목록. 단위에 못 미치는 자투리는 버린다 */
+function makeSlots(s){
+  const list = [];
+  makeWindows(s).forEach(function(w){
+    for(let t = w[0]; t + UNIT <= w[1]; t += UNIT) list.push(hm(t)+'~'+hm(t+UNIT));
+  });
+  return list;
+}
+function slotStart(v){ return mins(String(v).split('~')[0] || '00:00'); }
+
+function now(){
+  const d = new Date();
+  const team = teamOf(d);
+  const cur = d.getHours()*60 + d.getMinutes();
+  const info = {date:d, team:team, slot:null, next:null, open:false};
+  if(!team) return info;
+  const today = SLOTS[team].filter(function(s){ return s.day===d.getDay(); });
+  for(const s of today){
+    const sp = slotSpan(s);
+    if(cur>=sp[0] && cur<=sp[1]){ info.slot=s; info.open=true; return info; }
+  }
+  for(const s of today){ const sp=slotSpan(s); if(cur<sp[0]){ info.next={slot:s, at:hm(sp[0])}; break; } }
+  return info;
+}
+
+/* ===== 서버 연결 (JSONP — 학교망에서도 막히지 않습니다) ===== */
+let jseq = 0;
+function callApi(params, timeout){
+  return new Promise(function(resolve, reject){
+    const cb = '__zc' + (++jseq);
+    const s = document.createElement('script');
+    let done = false;
+    function cleanup(){
+      clearTimeout(timer);
+      try{ delete window[cb]; }catch(e){ window[cb] = undefined; }
+      if(s.parentNode) s.parentNode.removeChild(s);
+    }
+    const timer = setTimeout(function(){
+      if(done) return; done = true; cleanup(); reject(new Error('시간 초과'));
+    }, timeout || 25000);
+    window[cb] = function(d){ if(done) return; done = true; cleanup(); resolve(d); };
+    s.onerror = function(){ if(done) return; done = true; cleanup(); reject(new Error('연결 실패')); };
+    const q = Object.keys(params).map(function(k){
+      return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
+    }).join('&');
+    s.src = API + (API.indexOf('?')>=0 ? '&' : '?') + q + '&callback=' + cb + '&_=' + Date.now();
+    document.head.appendChild(s);
+  });
+}
+
+let failStreak = 0;
+function netOk(){ failStreak = 0; setNet('ok'); }
+function netFail(){ failStreak++; if(failStreak >= 3) setNet('bad'); }
+
+function setNet(v){
+  const txt = ONLINE ? {ok:'연결됨', bad:'연결 끊김 · 다시 시도 중', wait:'연결 확인 중'}[v]
+                     : '이 기기 전용 연습 모드';
+  const cls = 'netdot' + (ONLINE ? (v==='bad' ? ' bad' : '') : ' local');
+  ['netdot','netdot2'].forEach(function(id){
+    const el = $(id); if(!el) return;
+    el.textContent = txt; el.className = cls;
+  });
+}
+
+/* 서버가 준 상태를 받아들이고, 새 주문을 먼저 가려낸 뒤에 화면을 그립니다.
+   (이 순서가 어긋나면 알림음이 울리지 않습니다) */
+function absorb(d){
+  if(!d || d.same || d.ok === false) return;
+  state.rev = d.rev; state.day = d.day;
+  state.orders = d.orders || []; state.menu = d.menu || state.menu;
+  state.soldOut = d.soldOut || {}; state.free = !!d.free;
+  const fresh = state.orders.filter(function(o){ return o.status==='new' && !seen.has(o.id); });
+  renderAll();
+  if(fresh.length) alarm(fresh);
+}
+
+let pulling = false;
+async function pull(){
+  if(!ONLINE || pulling || busy) return;
+  pulling = true;
+  try{
+    const d = await callApi({a:'state', rev:state.rev});
+    netOk();
+    absorb(d);
+  }catch(e){ netFail(); }
+  finally{ pulling = false; }
+}
+
+/* 네트워크가 흔들려도 주문이 새지 않도록 세 번까지 다시 보냅니다.
+   전송키가 같으면 서버가 같은 주문으로 처리하므로 중복 접수가 생기지 않습니다. */
+async function send(action, params, tries){
+  if(!ONLINE){
+    try{ localMutate(action, params); }
+    catch(e){ throw Object.assign(e, {fromServer:true}); }
+    return {ok:true};
+  }
+  const max = tries || 1;
+  let lastErr;
+  for(let i = 0; i < max; i++){
+    try{
+      const d = await callApi(Object.assign({a:action}, params || {}));
+      if(!d) throw new Error('응답이 없습니다.');
+      if(d.ok === false){ netOk(); throw Object.assign(new Error(d.error || '처리하지 못했습니다.'), {fromServer:true}); }
+      netOk(); absorb(d); return d;
+    }catch(e){
+      lastErr = e;
+      if(e.fromServer) throw e;          // 서버가 거절한 것은 다시 보내지 않는다
+      netFail();
+      if(i < max - 1) await new Promise(function(r){ setTimeout(r, 1500 * (i + 1)); });
+    }
+  }
+  throw lastErr;
+}
+
+/* ===== 연습 모드 (서버 주소를 넣기 전) ===== */
+let bc = null;
+if(!ONLINE){
+  try{ bc = new BroadcastChannel('zain-cafe'); }catch(e){ bc = null; }
+  if(bc) bc.onmessage = function(e){
+    if(!e.data || e.data.from === ME) return;
+    const d = e.data.state; d.same = false; d.ok = true; absorb(d);
+  };
+  try{
+    const raw = localStorage.getItem('zc_local');
+    if(raw){
+      const o = JSON.parse(raw);
+      if(o.day === ymd(new Date())) state = Object.assign(state, o);
+    }
+  }catch(e){}
+}
+function localSave(){
+  state.day = ymd(new Date()); state.rev = String(Date.now());
+  try{ localStorage.setItem('zc_local', JSON.stringify(state)); }catch(e){}
+  if(bc) bc.postMessage({from:ME, state:JSON.parse(JSON.stringify(state))});
+}
+function localMutate(a, p){
+  if(a === 'order'){
+    const dup = state.orders.find(function(o){ return o.sendKey && o.sendKey === p.key; });
+    if(dup){ p.__newId = dup.id; return; }
+    const data = JSON.parse(p.payload);
+    let no = 1;
+    state.orders.forEach(function(o){ if(o.no >= no) no = o.no + 1; });
+    const id = 'L' + Date.now() + '-' + (++localSeq);
+    const d = new Date();
+    if(state.orders.some(function(o){ return o.slot === data.slot; })){
+      throw new Error('그 시간은 방금 다른 곳에서 예약했습니다. 다른 시간을 골라 주세요.');
+    }
+    state.orders.push({id:id, no:no, at:hm(d.getHours()*60+d.getMinutes()),
+      who:data.who, place:data.place, slot:data.slot, items:data.items,
+      recv:data.recv || '배달', status:'new', sendKey:p.key});
+    p.__newId = id;
+  }
+  if(a === 'status' || a === 'cancel'){
+    const to = a === 'cancel' ? 'cancel' : p.to;
+    const o = state.orders.find(function(x){ return x.id === p.id; });
+    if(o){
+      if(to === 'cancel'){
+        if(o.status !== 'new') throw new Error('이미 만들기를 시작해서 취소할 수 없습니다.');
+        state.orders = state.orders.filter(function(x){ return x.id !== p.id; });
+      } else o.status = to;
+    }
+  }
+  if(a === 'menuadd'){
+    state.menu.push({key:'m'+Date.now().toString(36), name:p.name, liquid:p.color,
+      foam:p.foam !== 'false', temps:String(p.temps).split(',')});
+  }
+  if(a === 'menudel'){
+    if(state.menu.length > 1) state.menu = state.menu.filter(function(m){ return m.key !== p.key; });
+  }
+  if(a === 'menuout'){ state.soldOut[p.key] = (p.v === '1'); }
+  if(a === 'free'){ state.free = (p.v === '1'); }
+
+  const fresh = state.orders.filter(function(o){ return o.status==='new' && !seen.has(o.id); });
+  localSave(); renderAll();
+  if(fresh.length) alarm(fresh);
+}
+
+/* ===== 내 주문 기억 ===== */
+function loadMine(){
+  try{
+    const o = JSON.parse(localStorage.getItem('zc_mine') || '{}');
+    if(o.day === ymd(new Date())) myIds = o.ids || [];
+  }catch(e){}
+  try{ $('who').value = localStorage.getItem('zc_who') || ''; }catch(e){}
+}
+function saveMine(){
+  try{ localStorage.setItem('zc_mine', JSON.stringify({day:ymd(new Date()), ids:myIds})); }catch(e){}
+}
+
+/* ===== 컵 그림 ===== */
+function cup(m, ice){
+  const liq = ice ? '#8FB8C9' : m.liquid;
+  return '<svg viewBox="0 0 46 52" aria-hidden="true">'+
+  '<path d="M7 12h28v22a11 11 0 0 1-11 11h-6A11 11 0 0 1 7 34z" fill="#fff" stroke="#231713" stroke-width="2.5" stroke-linejoin="round"/>'+
+  '<path d="M9.5 17h23v17a8.5 8.5 0 0 1-8.5 8.5h-6A8.5 8.5 0 0 1 9.5 34z" fill="'+esc(liq)+'"/>'+
+  (m.foam?'<rect x="9.5" y="17" width="23" height="5" fill="#F7EEE2"/>':'')+
+  (ice?'<g fill="#EAF4F8" stroke="#231713" stroke-width="1.2"><rect x="13" y="21" width="7" height="7" rx="1.5"/><rect x="23" y="26" width="7" height="7" rx="1.5"/></g>':'')+
+  '<path d="M35 17h4a5 5 0 0 1 0 10h-4" fill="none" stroke="#231713" stroke-width="2.5" stroke-linecap="round"/>'+
+  (!ice?'<path d="M16 8c0-3 3-3 3-6M24 8c0-3 3-3 3-6" fill="none" stroke="#B4511E" stroke-width="2" stroke-linecap="round" opacity=".7"/>':'')+
+  '</svg>';
+}
+
+/* ===== 알림 ===== */
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(function(){ t.classList.remove('on'); }, 3600);
+}
+function tone(f,start,dur,vol){
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.type='sine'; o.frequency.value=f;
+  g.gain.setValueAtTime(0, ac.currentTime+start);
+  g.gain.linearRampToValueAtTime(vol, ac.currentTime+start+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+start+dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(ac.currentTime+start); o.stop(ac.currentTime+start+dur+0.05);
+}
+function ding(){ if(!ac) return; try{ tone(988,0,0.55,0.28); tone(659,0.28,0.75,0.28); }catch(e){} }
+function sayText(o){
+  return o.no+'번, '+String(o.slot||'').replace('~',' 부터 ')+', '+
+    (o.recv==='텀블러' ? '텀블러 주문, ' : o.place+', ')+o.who+'. '+
+    o.items.map(function(i){ return i.temp+' '+i.name+' '+i.qty+'잔'; }).join(', ')+
+    (o.recv==='텀블러' ? '. 미리 만들어 두세요' : '');
+}
+function speak(list){
+  if(!('speechSynthesis' in window)) return;
+  try{
+    speechSynthesis.cancel();
+    list.forEach(function(o){
+      const u = new SpeechSynthesisUtterance(sayText(o));
+      u.lang='ko-KR'; u.rate=0.9; speechSynthesis.speak(u);
+    });
+  }catch(e){}
+}
+function alarm(fresh){
+  if(!armed) return;
+  ding();
+  const f=$('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+  setTimeout(function(){ speak(fresh); }, 1100);
+}
+
+/* ===== 주문 화면 ===== */
+const menuGrid=$('menuGrid'), optField=$('optField'), optChips=$('optChips'), optName=$('optName');
+const qNum=$('qNum'), cartBox=$('cart'), placeList=$('placeList'), hint=$('hint');
+const recvChips=$('recvChips'), slotChips=$('slotChips');
+
+function renderNotice(){
+  const n = now(), box = $('notice'), form = $('orderForm');
+  const usable = n.open || state.free;
+  if(state.free && !n.open){
+    box.className='notice open';
+    box.innerHTML='<b>연습 모드</b><p>수업 시간이 아니지만 주문을 받고 있습니다. 바리스타 화면에서 끌 수 있습니다.</p>';
+  } else if(n.open){
+    box.className='notice open';
+    box.innerHTML='<b>지금 주문할 수 있습니다</b><p>'+esc(n.team)+' '+esc(slotLabel(n.slot))+'</p>';
+  } else if(n.team && n.next){
+    box.className='notice closed';
+    box.innerHTML='<b>아직 주문 시간이 아닙니다</b><p>오늘 '+esc(n.next.at)+'부터 받습니다. '+esc(n.team)+' '+esc(slotLabel(n.next.slot))+'</p>';
+  } else if(n.team){
+    box.className='notice closed';
+    box.innerHTML='<b>오늘 주문은 끝났습니다</b><p>'+esc(n.team)+' 주간입니다. 다음 실습 시간에 다시 주문해 주세요.</p>';
+  } else {
+    box.className='notice closed';
+    box.innerHTML='<b>이번 주는 주문을 받지 않습니다</b><p>주문 가능 주간이 아닙니다.</p>';
+  }
+  form.classList.toggle('closed-mask', !usable);
+  return usable;
+}
+
+function currentPlaces(){
+  const n = now();
+  if(n.slot) return n.slot.places;
+  if(state.free){
+    const t = n.team || Object.keys(SLOTS)[0];
+    const all=[];
+    SLOTS[t].forEach(function(s){ s.places.forEach(function(p){ all.push(p); }); });
+    return all.slice(0,8);
+  }
+  return [];
+}
+/* 받을 곳은 직접 입력. 배정표에 있는 곳은 입력칸을 누르면 목록으로 떠서 골라 적을 수 있다 */
+function renderPlaces(){
+  const list = currentPlaces();
+  placeList.innerHTML = list.map(function(p){
+    return '<option value="'+esc(p[0])+'">'+(p[1]?(+p[1])+'명':'')+'</option>';
+  }).join('');
+}
+$('placeFree').addEventListener('input', function(){
+  const v = placeValue();
+  const hit = currentPlaces().find(function(p){ return p[0] === v; });
+  pick.head = hit ? (+hit[1] || 0) : 0;
+  renderQtyHint(); validate();
+});
+
+function renderQtyHint(){
+  const box=$('qtyHint');
+  if(pick.head>0 && pick.qty!==pick.head && pick.recv!=='텀블러'){
+    box.innerHTML='이곳은 보통 <b>'+pick.head+'명</b>입니다 <button type="button" id="qtyApply">'+pick.head+'잔으로</button>';
+  } else box.innerHTML='';
+}
+$('qtyHint').addEventListener('click', function(e){
+  if(!e.target.closest('#qtyApply')) return;
+  pick.qty=pick.head; qNum.textContent=pick.qty; renderQtyHint();
+});
+
+/* ===== 받는 방법 ===== */
+function renderRecv(){
+  recvChips.innerHTML =
+    '<button data-r="배달" aria-pressed="'+(pick.recv==='배달')+'">교실로 배달<small>바리스타가 가져다 드립니다</small></button>'+
+    '<button data-r="텀블러" aria-pressed="'+(pick.recv==='텀블러')+'">개인 텀블러<small>미리 만들어 둡니다</small></button>';
+  const note=$('recvNote');
+  note.innerHTML = pick.recv==='텀블러'
+    ? '<b>텀블러를 가지고 바리스타실로 와 주세요.</b> 미리 만들어 두었다가 텀블러에 옮겨 담아 드립니다. 다 되면 이 화면에 알려 드립니다.'
+    : '';
+  note.hidden = pick.recv!=='텀블러';
+}
+recvChips.addEventListener('click', function(e){
+  const b=e.target.closest('button[data-r]'); if(!b) return;
+  pick.recv=b.dataset.r; renderRecv(); renderQtyHint(); validate();
+});
+
+/* ===== 받는 시간 ===== */
+function currentSlots(){
+  const n = now();
+  if(n.slot) return makeSlots(n.slot);
+  if(state.free){
+    const t = n.team || Object.keys(SLOTS)[0];
+    const d = new Date().getDay();
+    const s = SLOTS[t].find(function(x){ return x.day===d; }) || SLOTS[t][0];
+    return makeSlots(s);
+  }
+  return [];
+}
+function takenSlots(){
+  const m = {};
+  state.orders.forEach(function(o){ if(o.slot) m[o.slot] = o.place || '예약됨'; });
+  return m;
+}
+function renderSlots(){
+  const list = currentSlots(), taken = takenSlots();
+  if(pick.slot && taken[pick.slot]) pick.slot = null;
+  slotChips.innerHTML = list.length
+    ? list.map(function(v){
+        const by = taken[v];
+        return '<button data-s="'+esc(v)+'" aria-pressed="'+(pick.slot===v)+'"'+(by?' disabled':'')+'>'+
+               esc(v)+(by?'<small>'+esc(by)+' 예약</small>':'')+'</button>';
+      }).join('')
+    : '<p style="margin:0;color:var(--ink-soft);font-size:15px">지금은 고를 수 있는 시간이 없습니다.</p>';
+}
+slotChips.addEventListener('click', function(e){
+  const b=e.target.closest('button[data-s]'); if(!b || b.disabled) return;
+  pick.slot=b.dataset.s; renderSlots(); validate();
+});
+
+function renderMenu(){
+  menuGrid.innerHTML = state.menu.map(function(m){
+    const out=!!state.soldOut[m.key];
+    return '<button data-k="'+esc(m.key)+'" aria-pressed="'+(pick.key===m.key)+'"'+(out?' disabled':'')+'>'+
+      cup(m,false)+'<span>'+esc(m.name)+'</span>'+(out?'<span class="soldout">품절</span>':'')+'</button>';
+  }).join('');
+  if(pick.key && !state.menu.some(function(m){ return m.key===pick.key; })){
+    pick.key=null; optField.hidden=true;
+  }
+}
+menuGrid.addEventListener('click', function(e){
+  const b=e.target.closest('button[data-k]'); if(!b) return;
+  const m=state.menu.find(function(x){ return x.key===b.dataset.k; }); if(!m) return;
+  pick.key=m.key; pick.temp=m.temps[0];
+  optName.textContent=m.name; optField.hidden=false;
+  optChips.innerHTML = m.temps.map(function(t){ return '<button data-t="'+esc(t)+'" aria-pressed="'+(t===pick.temp)+'">'+esc(t)+'</button>'; }).join('')
+    + (m.temps.length===1?'<span style="align-self:center;color:var(--ink-soft);font-size:14px">이 메뉴는 '+esc(m.temps[0])+'만 만듭니다</span>':'');
+  renderMenu(); validate();
+});
+optChips.addEventListener('click', function(e){
+  const b=e.target.closest('button[data-t]'); if(!b) return;
+  pick.temp=b.dataset.t;
+  Array.prototype.forEach.call(optChips.querySelectorAll('button'), function(x){ x.setAttribute('aria-pressed', x.dataset.t===pick.temp); });
+});
+
+$('qMinus').onclick=function(){ pick.qty=Math.max(1,pick.qty-1); qNum.textContent=pick.qty; renderQtyHint(); };
+$('qPlus').onclick =function(){ pick.qty=Math.min(20,pick.qty+1); qNum.textContent=pick.qty; renderQtyHint(); };
+
+$('addBtn').onclick=function(){
+  if(!pick.key){ hint.textContent='먼저 메뉴를 골라 주세요.'; return; }
+  if(state.soldOut[pick.key]){ toast('방금 품절된 메뉴입니다.'); renderMenu(); return; }
+  const m=state.menu.find(function(x){ return x.key===pick.key; }); if(!m) return;
+  const same=pick.cart.find(function(c){ return c.key===pick.key && c.temp===pick.temp; });
+  if(same) same.qty+=pick.qty;
+  else pick.cart.push({key:m.key, name:m.name, temp:pick.temp, qty:pick.qty});
+  pick.qty=1; qNum.textContent=1;
+  renderQtyHint(); renderCart(); validate();
+};
+
+function renderCart(){
+  if(!pick.cart.length){ cartBox.className='cart empty'; cartBox.textContent='아직 담은 메뉴가 없습니다.'; return; }
+  cartBox.className='cart';
+  cartBox.innerHTML='<ul>'+pick.cart.map(function(c,i){
+    const out=!!state.soldOut[c.key];
+    return '<li><strong>'+esc(c.name)+'</strong>'+
+    '<span class="tag '+(c.temp==='차갑게'?'ice':'hot')+'">'+esc(c.temp)+'</span>'+
+    (out?'<span class="tag" style="background:#F8D7D7;color:#8E1C1C">품절</span>':'')+
+    '<span class="n">'+c.qty+'잔</span>'+
+    '<button data-i="'+i+'" aria-label="'+esc(c.name)+' 빼기">빼기</button></li>';
+  }).join('')+'</ul>';
+}
+cartBox.addEventListener('click', function(e){
+  const b=e.target.closest('button[data-i]'); if(!b) return;
+  pick.cart.splice(+b.dataset.i,1); renderCart(); validate();
+});
+$('who').addEventListener('input', function(){
+  try{ localStorage.setItem('zc_who', $('who').value.trim()); }catch(e){}
+  validate();
+});
+
+function placeValue(){ return $('placeFree').value.trim(); }
+
+function validate(){
+  const usable = renderNotice();
+  const who=$('who').value.trim();
+  const soldIn = pick.cart.some(function(c){ return state.soldOut[c.key]; });
+  let msg='';
+  if(busy) msg='';
+  else if(!usable) msg='지금은 주문할 수 없습니다.';
+  else if(!placeValue()) msg='받을 곳을 골라 주세요.';
+  else if(!pick.slot) msg='받는 시간을 골라 주세요.';
+  else if(!pick.cart.length) msg='메뉴를 담아 주세요.';
+  else if(soldIn) msg='품절된 메뉴를 빼 주세요.';
+  else if(!who) msg='주문자 이름을 적어 주세요.';
+  hint.textContent=msg;
+  $('sendBtn').disabled = busy || !!msg;
+}
+
+$('sendBtn').onclick=async function(){
+  if(busy) return;
+  const btn=$('sendBtn');
+  const payload={ who:$('who').value.trim(), place:placeValue(), recv:pick.recv, slot:pick.slot,
+    items:pick.cart.map(function(c){ return {name:c.name,temp:c.temp,qty:c.qty}; }) };
+  /* 전송키: 같은 주문을 두 번 보내도 서버가 한 건으로 처리합니다 */
+  const p={payload:JSON.stringify(payload), key:ME+'-'+Date.now().toString(36)};
+  busy=true; btn.disabled=true; btn.textContent='보내는 중…'; hint.textContent='';
+  try{
+    const d = await send('order', p, 3);
+    const id = (d && d.newId) || p.__newId;
+    if(id && myIds.indexOf(id)<0){ myIds.push(id); saveMine(); }
+    pick.cart=[]; pick.slot=null; renderCart(); renderSlots(); renderMine();
+    toast(pick.recv==='텀블러'
+      ? '주문을 보냈습니다. 다 되면 알려 드릴게요.'
+      : '주문을 보냈습니다.');
+    window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+  }catch(e){
+    toast(e.fromServer ? e.message : '주문을 보내지 못했습니다. 잠시 뒤 다시 눌러 주세요.');
+  }finally{
+    busy=false; btn.textContent='주문 보내기'; validate();
+  }
+};
+
+function renderMine(){
+  const box=$('mine');
+  const mine=state.orders.filter(function(o){ return myIds.indexOf(o.id)>=0; }).slice().reverse();
+  if(!mine.length){ box.innerHTML=''; return; }
+  box.innerHTML='<h3 style="font-size:16px;margin:0">내 주문</h3>'+mine.map(function(o){
+    const tum = o.recv==='텀블러';
+    return '<div class="mycard'+(tum && o.status==='ready' ? ' call' : '')+'"><div class="no">'+(+o.no)+'</div>'+
+    '<div class="txt"><b>'+esc(o.items.map(function(i){ return i.name+' '+i.qty+'잔'; }).join(', '))+'</b>'+
+    '<span>'+esc(o.slot)+' · '+esc(o.place)+' / '+esc(o.who)+(tum?' / 텀블러':'')+'</span>'+
+    (tum && o.status==='ready' ? '<em>텀블러를 가지고 바리스타실로 와 주세요</em>' : '')+
+    '</div>'+
+    '<div class="state '+esc(o.status)+'">'+(LABEL_MINE[o.status]||'')+'</div>'+
+    (o.status==='new'?'<button class="cancel" data-cancel="'+esc(o.id)+'">취소</button>':'')+'</div>';
+  }).join('');
+}
+$('mine').addEventListener('click', async function(e){
+  const b=e.target.closest('button[data-cancel]'); if(!b || b.disabled) return;
+  b.disabled=true;
+  try{ await send('cancel', {id:b.dataset.cancel}); toast('주문을 취소했습니다.'); }
+  catch(err){ toast(err.message || '취소하지 못했습니다.'); b.disabled=false; }
+});
+
+/* ===== 바리스타 화면 ===== */
+const board=$('board'), tumBoard=$('tumBoard');
+
+function renderNow(){
+  const n=now(), bar=$('nowbar');
+  if(n.open){
+    bar.innerHTML='<b>'+esc(n.team)+' '+esc(slotLabel(n.slot))+'</b>'+
+      '<div class="route">'+n.slot.places.map(function(p){ return '<span>'+esc(p[0])+(p[1]?' '+(+p[1])+'명':'')+'</span>'; }).join('')+'</div>';
+  } else if(n.team && n.next){
+    bar.innerHTML='<b>다음 주문 시간: 오늘 '+esc(n.next.at)+'</b><div class="route"><span>'+esc(slotLabel(n.next.slot))+'</span></div>';
+  } else if(n.team){
+    bar.innerHTML='<b>'+esc(n.team)+' 주간, 오늘 실습은 끝났습니다</b>';
+  } else {
+    bar.innerHTML='<b>이번 주는 주문 가능 주간이 아닙니다</b>';
+  }
+}
+
+function ticket(o){
+  const tum = o.recv==='텀블러';
+  let btn;
+  if(o.status==='new') btn='<button class="go" data-go="'+esc(o.id)+'">만들기 시작</button>';
+  else if(o.status==='making') btn = tum
+    ? '<button class="keep" data-keep="'+esc(o.id)+'">만들어 뒀어요</button>'
+    : '<button class="fin" data-fin="'+esc(o.id)+'">배달 완료</button>';
+  else btn='<button class="fin" data-fin="'+esc(o.id)+'">옮겨 담아 드림</button>';
+
+  return '<article class="ticket '+esc(o.status)+(tum?' tum':'')+(seen.has(o.id)?'':' enter')+'">'+
+  '<div class="t-head"><div class="no">'+(+o.no)+'</div>'+
+  '<div class="slot">'+esc(o.slot)+'</div>'+
+  '<div class="state '+esc(o.status)+'">'+(LABEL_BAR[o.status]||'')+'</div></div>'+
+  '<div class="t-who">'+esc(o.who)+
+    '<span>'+(tum ? '텀블러로 직접 받아 가심 ('+esc(o.place)+')' : esc(o.place)+'로 배달')+'</span></div>'+
+  '<ul class="t-items">'+o.items.map(function(i){
+    return '<li>'+esc(i.name)+'<span class="tag '+(i.temp==='차갑게'?'ice':'hot')+'">'+esc(i.temp)+'</span>'+
+    '<span class="n">'+(+i.qty)+'</span></li>';
+  }).join('')+'</ul>'+
+  '<div class="t-act"><button class="say" data-say="'+esc(o.id)+'" aria-label="주문 다시 듣기">🔊</button>'+
+  btn+'</div></article>';
+}
+
+function renderTimeline(){
+  const list = currentSlots(), taken = takenSlots(), box = $('timeline');
+  const nowMin = new Date().getHours()*60 + new Date().getMinutes();
+  if(!list.length){ box.innerHTML=''; box.hidden=true; return; }
+  box.hidden=false;
+  box.innerHTML = list.map(function(v){
+    const done = slotStart(v)+UNIT <= nowMin;
+    const on = !done && slotStart(v) <= nowMin;
+    return '<span class="'+(taken[v]?'has':'')+(on?' now':'')+(done?' past':'')+'">'+
+           esc(v.split('~')[0])+'<b>'+esc(taken[v]||'비어 있음')+'</b></span>';
+  }).join('');
+}
+
+function renderBoard(){
+  const bySlot=function(a,b){ return slotStart(a.slot)-slotStart(b.slot) || a.no-b.no; };
+  const live=state.orders.filter(function(o){ return o.status==='new' || o.status==='making'; }).sort(bySlot);
+  const wait=state.orders.filter(function(o){ return o.status==='ready'; }).sort(bySlot);
+
+  board.innerHTML = live.length ? live.map(ticket).join('')
+    : '<div class="empty-board" style="grid-column:1/-1"><b>기다리는 주문이 없습니다</b>새 주문이 들어오면 소리와 함께 여기에 나타납니다.</div>';
+
+  $('tumzone').hidden = !wait.length;
+  tumBoard.innerHTML = wait.map(ticket).join('');
+
+  state.orders.forEach(function(o){ seen.add(o.id); });
+
+  const done=state.orders.filter(function(o){ return o.status==='done'; });
+  $('cNew').textContent=state.orders.filter(function(o){ return o.status==='new'; }).length;
+  $('cMaking').textContent=state.orders.filter(function(o){ return o.status==='making'; }).length;
+  $('cDone').textContent=done.reduce(function(s,o){ return s+o.items.reduce(function(a,i){ return a+(+i.qty||0); },0); },0);
+  $('cTum').textContent=wait.length;
+  $('doneList').innerHTML = done.length
+    ? done.slice().reverse().map(function(o){
+        return '<li>'+(+o.no)+'번 '+esc(o.who)+' / '+(o.recv==='텀블러'?'텀블러':esc(o.place))+'</li>'; }).join('')
+    : '<li>아직 없습니다</li>';
+}
+
+async function boardClick(e){
+  const say=e.target.closest('[data-say]');
+  if(say){ const o=state.orders.find(function(x){ return x.id===say.dataset.say; }); if(o) speak([o]); return; }
+  const go=e.target.closest('[data-go]'), keep=e.target.closest('[data-keep]'), fin=e.target.closest('[data-fin]');
+  const b=go||keep||fin; if(!b || b.disabled) return;
+  const id = b.dataset.go || b.dataset.keep || b.dataset.fin;
+  const to = go ? 'making' : (keep ? 'ready' : 'done');
+  b.disabled=true; b.textContent='잠시만…';
+  try{ await send('status', {id:id, to:to}, 3); }
+  catch(err){ toast(err.message || '바꾸지 못했습니다. 다시 눌러 주세요.'); renderBoard(); }
+}
+board.addEventListener('click', boardClick);
+tumBoard.addEventListener('click', boardClick);
+
+/* ===== 메뉴 관리 ===== */
+function renderMenuAdmin(){
+  $('menuList').innerHTML = state.menu.map(function(m){
+    return '<li>'+cup(m,false)+'<span class="nm">'+esc(m.name)+'</span>'+
+    '<span class="tp">'+esc(m.temps.join(', '))+'</span>'+
+    '<span class="sp"><button data-so="'+esc(m.key)+'" class="'+(state.soldOut[m.key]?'on':'')+'">'+(state.soldOut[m.key]?'품절 해제':'품절')+'</button>'+
+    '<button class="del" data-del="'+esc(m.key)+'">삭제</button></span></li>';
+  }).join('');
+  $('swatches').innerHTML = SWATCH.map(function(c){
+    return '<button class="swatch" data-c="'+c+'" style="background:'+c+'" aria-pressed="'+(c===newColor)+'" aria-label="색 고르기"></button>';
+  }).join('');
+  $('freeBtn').setAttribute('aria-pressed', state.free);
+}
+$('menuList').addEventListener('click', async function(e){
+  const so=e.target.closest('[data-so]'), del=e.target.closest('[data-del]');
+  try{
+    if(so) await send('menuout', {key:so.dataset.so, v: state.soldOut[so.dataset.so] ? '0' : '1'});
+    if(del) await send('menudel', {key:del.dataset.del});
+  }catch(err){ toast(err.message || '바꾸지 못했습니다.'); }
+});
+$('swatches').addEventListener('click', function(e){
+  const b=e.target.closest('[data-c]'); if(!b) return;
+  newColor=b.dataset.c; renderMenuAdmin();
+});
+$('addMenuBtn').onclick=async function(){
+  const name=$('newName').value.trim(); if(!name) return;
+  const t=$('newTemp').value;
+  const temps = t==='both'?'따뜻하게,차갑게' : (t==='hot'?'따뜻하게':'차갑게');
+  try{ await send('menuadd', {name:name, temps:temps, color:newColor, foam:'true'}); $('newName').value=''; }
+  catch(err){ toast(err.message || '메뉴를 추가하지 못했습니다.'); }
+};
+$('freeBtn').onclick=async function(){
+  try{ await send('free', {v: state.free ? '0' : '1'}); }
+  catch(err){ toast(err.message || '바꾸지 못했습니다.'); }
+};
+
+/* ===== 연습 주문 ===== */
+$('testBtn').onclick=async function(){
+  const names=['이수진 선생님','박도윤 선생님','최민서 선생님','행정실 주무관님'];
+  const avail=state.menu.filter(function(x){ return !state.soldOut[x.key]; });
+  const m=avail[Math.floor(Math.random()*avail.length)]||state.menu[0];
+  const places=currentPlaces();
+  const p=places.length?places[Math.floor(Math.random()*places.length)]:['교무실',2];
+  const tum=Math.random()<0.4;
+  const taken=takenSlots();
+  const freeSlots=currentSlots().filter(function(v){ return !taken[v]; });
+  if(!freeSlots.length){ toast('남은 시간이 없습니다.'); return; }
+  const payload={ who:names[Math.floor(Math.random()*names.length)], place:p[0],
+    slot: freeSlots[Math.floor(Math.random()*freeSlots.length)],
+    recv: tum?'텀블러':'배달',
+    items:[{name:m.name, temp:m.temps[Math.floor(Math.random()*m.temps.length)], qty: tum?1:(p[1]||1)}] };
+  try{ await send('order', {payload:JSON.stringify(payload), key:ME+'-t'+Date.now().toString(36)}, 2); }
+  catch(err){ toast('연습 주문을 넣지 못했습니다.'); }
+};
+
+/* ===== 소리와 화면 켜 두기 ===== */
+async function keepAwake(){
+  if(!('wakeLock' in navigator)) return;
+  try{
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', function(){ wakeLock = null; });
+  }catch(e){ wakeLock = null; }
+}
+$('armBtn').onclick=async function(){
+  try{ ac=new (window.AudioContext||window.webkitAudioContext)(); await ac.resume(); }catch(e){}
+  try{ if('speechSynthesis' in window){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); } }catch(e){}
+  await keepAwake();
+  armed=true;
+  $('armbar').innerHTML='<p>주문을 받고 있습니다. 새 주문이 오면 소리가 납니다.</p>';
+  ding();
+};
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='visible'){
+    if(armed && !wakeLock) keepAwake();
+    pull();
+  }
+});
+
+/* ===== 화면 전환 ===== */
+const tabO=$('tabOrder'), tabB=$('tabBar');
+function show(which){
+  curView = which;
+  const isO = which==='order';
+  $('viewOrder').classList.toggle('is-on', isO);
+  $('viewBar').classList.toggle('is-on', !isO);
+  tabO.setAttribute('aria-pressed', isO); tabB.setAttribute('aria-pressed', !isO);
+  window.scrollTo(0,0);
+}
+tabO.onclick=function(){ show('order'); };
+tabB.onclick=function(){ show('bar'); };
+
+/* 주소 뒤에 ?v=bar 를 붙이면 바리스타 전용, ?v=order 를 붙이면 주문 전용으로 고정됩니다 */
+(function(){
+  const v = new URLSearchParams(location.search).get('v');
+  if(v==='bar' || v==='order'){
+    show(v==='bar'?'bar':'order');
+    document.querySelector('.switcher').classList.add('locked');
+  }
+})();
+
+/* ===== 렌더와 주기 작업 ===== */
+function renderAll(){
+  renderNotice(); renderPlaces(); renderRecv(); renderSlots(); renderQtyHint(); renderMenu();
+  renderCart(); renderMine(); renderNow(); renderTimeline(); renderBoard(); renderMenuAdmin(); validate();
+}
+
+let lastSlotKey='';
+function clockTick(){
+  const n=now();
+  const key=(n.team||'-')+'/'+(n.slot?n.slot.periods.join('-'):'-')+'/'+state.free;
+  if(key!==lastSlotKey){ lastSlotKey=key; renderPlaces(); renderSlots(); }
+  renderNotice(); renderNow(); renderTimeline(); validate();
+}
+
+function pollTick(){
+  const base = (curView==='bar') ? 5000 : 15000;
+  const wait = base + Math.min(failStreak, 4) * 5000;
+  if(!document.hidden) pull();
+  setTimeout(pollTick, wait);
+}
+
+loadMine();
+setNet(ONLINE ? 'wait' : 'local');
+renderAll();
+setInterval(clockTick, 15000);
+if(ONLINE){ pull(); pollTick(); }
+
+</script>
+</body>
+</html>
