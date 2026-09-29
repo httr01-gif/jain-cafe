@@ -237,6 +237,25 @@ input[type="text"]::placeholder{color:#A8968A}
 .queue p{margin:4px 0 0;font-size:14px;color:var(--ink-soft);font-weight:600}
 .t-head .pk{margin-left:auto;font-size:17px;font-weight:800;background:var(--paper-2);border-radius:8px;padding:5px 10px}
 
+/* 관리자 전용 */
+.adminhead{margin:30px 0 0;padding:12px 16px;border-radius:12px;background:var(--ink);color:var(--paper);
+  font-weight:800;font-size:15px}
+.adminhead span{font-weight:600;opacity:.7;margin-left:6px}
+.tbox{border:2px solid var(--line);border-radius:12px;background:var(--milk);padding:14px;display:flex;flex-direction:column;gap:10px}
+.tbox + .tbox{margin-top:10px}
+.tbox .cur{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tbox .cur b{font-size:16px}
+.tbox .cur span{font-weight:800;font-variant-numeric:tabular-nums;background:var(--paper-2);border-radius:999px;padding:6px 12px;font-size:14px}
+.tbox .cur span.on{background:#E9F3EE;color:var(--leaf)}
+.tbox .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tbox input[type="time"]{padding:10px 12px;border:2px solid var(--line);border-radius:10px;font-size:17px;
+  font-family:inherit;background:var(--paper);color:var(--ink);font-variant-numeric:tabular-nums}
+.tbox button{border:none;border-radius:10px;padding:12px 18px;font-weight:800;min-height:46px}
+.tbox button.ok{background:var(--leaf);color:#fff}
+.tbox button.off{background:var(--paper-2);color:var(--ink-soft);border:2px solid var(--line)}
+.tbox p{margin:0;font-size:14px;color:var(--ink-soft);font-weight:600}
+.freenote{margin:8px 0 0;font-size:14px;color:var(--ink-soft);font-weight:600}
+
 /* 만족도 평가 */
 .stars{display:flex;gap:8px;flex-wrap:wrap}
 .stars button{width:58px;height:58px;border:2px solid var(--line);background:var(--milk);border-radius:12px;
@@ -391,8 +410,32 @@ input[type="text"]::placeholder{color:#A8968A}
     </div>
     <ul class="slist" id="sList"></ul>
 
+    <div id="adminZone">
+    <p class="adminhead">관리자 설정<span>관리자 주소(?v=all)에서만 보입니다</span></p>
+
     <h3>운영 방식</h3>
     <div class="chips" id="modeChips"></div>
+
+    <h3>주문 시간 관리</h3>
+    <div class="tbox">
+      <div class="cur"><b>오늘 임시 운영</b><span id="tempCur">설정 없음</span></div>
+      <div class="row">
+        <input type="time" id="tFrom" step="300" aria-label="임시 운영 시작 시각"> ~
+        <input type="time" id="tTo" step="300" aria-label="임시 운영 끝 시각">
+        <button class="ok" id="tSet">오늘만 적용</button>
+        <button class="off" id="tClear">해제</button>
+      </div>
+      <p>오늘 하루만 정해진 시간표 대신 이 시간에 주문을 받습니다. 교실 배달은 10분 단위 칸, 매장은 번호 순서로 받습니다. 내일이 되면 자동으로 풀립니다.</p>
+    </div>
+    <div class="tbox">
+      <div class="cur"><b>매장 운영 시간</b><span id="storeCur"></span></div>
+      <div class="row">
+        <input type="time" id="sFrom" step="300" aria-label="매장 시작 시각"> ~
+        <input type="time" id="sTo" step="300" aria-label="매장 끝 시각">
+        <button class="ok" id="sSet">저장</button>
+      </div>
+      <p>운영 방식이 '매장'일 때 평일 이 시간에 주문을 받습니다.</p>
+    </div>
 
     <h3>메뉴 관리</h3>
     <ul class="mlist" id="menuList"></ul>
@@ -411,6 +454,8 @@ input[type="text"]::placeholder{color:#A8968A}
 
     <h3>연습 설정</h3>
     <div class="chips"><button id="freeBtn" aria-pressed="false">수업 시간이 아니어도 주문 받기</button></div>
+    <p class="freenote">켜 두면 언제든 주문을 받고, 교실 배달의 받는 시간은 지금 시각부터 10분 단위로 생깁니다. 연습 주문 넣기 버튼도 함께 쓸 수 있습니다.</p>
+    </div>
   </div>
 </section>
 
@@ -539,7 +584,7 @@ function esc(s){
 const ME = Math.random().toString(36).slice(2);
 const EMPTY_SURVEY = {today:{total:0, menus:[]}, all:{total:0, menus:[]}};
 let state = { rev:'0', day:'', orders:[], menu:JSON.parse(JSON.stringify(SEED_MENU)), soldOut:{}, free:false,
-              mode:'class', survey:JSON.parse(JSON.stringify(EMPTY_SURVEY)) };
+              mode:'class', survey:JSON.parse(JSON.stringify(EMPTY_SURVEY)), temp:null, storeTime:null };
 let myIds = [];
 let pick  = { key:null, temp:null, qty:1, cart:[], head:0, recv:'배달', slot:null, pickup:null, cup:null };
 let sv    = { menu:null, taste:0, service:0, range:'today' };
@@ -563,14 +608,17 @@ const LABEL_MINE_STORE = { new:'접수했어요', making:'만들고 있어요', 
 const LABEL_BAR_STORE  = { new:'새 주문', making:'만드는 중', ready:'찾아가길 기다림' };
 
 function isStore(){ return state.mode === 'store'; }
+/* 매장 운영 시간: 오늘 임시 운영 > 관리자가 저장한 시간 > 설정 구역 기본값 */
+function sOpen(){ return state.temp ? state.temp.from : ((state.storeTime && state.storeTime.open) || STORE.open); }
+function sClose(){ return state.temp ? state.temp.to : ((state.storeTime && state.storeTime.close) || STORE.close); }
 function cartCups(){ return pick.cart.reduce(function(a, c){ return a + c.qty; }, 0); }
 function storeNow(){
   const d = new Date(), wd = d.getDay(), cur = d.getHours()*60 + d.getMinutes();
   const store = state.orders.filter(function(o){ return o.mode === 'store'; });
   let last = 0; store.forEach(function(o){ if(+o.no > last) last = +o.no; });
-  const weekday = wd >= 1 && wd <= 5;
-  return { weekday:weekday, open: weekday && cur >= mins(STORE.open) && cur <= mins(STORE.close),
-           before: cur < mins(STORE.open), used:store.length, next:last + 1,
+  const weekday = (wd >= 1 && wd <= 5) || !!state.temp;
+  return { weekday:weekday, open: weekday && cur >= mins(sOpen()) && cur <= mins(sClose()),
+           before: cur < mins(sOpen()), used:store.length, next:last + 1,
            remain: Math.max(0, STORE.maxOrders - store.length) };
 }
 
@@ -590,11 +638,12 @@ function teamOf(date){
   }
   return null;
 }
-function slotSpan(s){ return [mins(PERIODS[s.periods[0]][0]), mins(PERIODS[s.periods[s.periods.length-1]][1])]; }
-function slotLabel(s){ return DAYNAME[s.day]+'요일 '+s.periods.join('~')+'교시 ('+hm(slotSpan(s)[0])+'~'+hm(slotSpan(s)[1])+')'; }
+function slotSpan(s){ if(s.temp) return [mins(s.from), mins(s.to)]; return [mins(PERIODS[s.periods[0]][0]), mins(PERIODS[s.periods[s.periods.length-1]][1])]; }
+function slotLabel(s){ if(s.temp) return '임시 운영 ('+s.from+'~'+s.to+')'; return DAYNAME[s.day]+'요일 '+s.periods.join('~')+'교시 ('+hm(slotSpan(s)[0])+'~'+hm(slotSpan(s)[1])+')'; }
 
 /* 블록의 교시별 제조 가능 구간 — 첫 교시는 앞에서 PREP, 마지막 교시는 뒤에서 WRAP 를 뺀다 */
 function makeWindows(s){
+  if(s.temp) return [[mins(s.from), mins(s.to)]];
   const ps = s.periods, out = [];
   ps.forEach(function(p, i){
     let a = mins(PERIODS[p][0]), b = mins(PERIODS[p][1]);
@@ -614,11 +663,26 @@ function makeSlots(s){
 }
 function slotStart(v){ return mins(String(v).split('~')[0] || '00:00'); }
 
+/* 오늘 임시 운영 블록 — 받을 곳 인원 안내는 그 조의 배정 장소 전체를 쓴다 */
+function tempSlot(team){
+  if(!state.temp) return null;
+  const t = team || Object.keys(SLOTS)[0], seen = {}, places = [];
+  SLOTS[t].forEach(function(x){ x.places.forEach(function(p){ if(!seen[p[0]]){ seen[p[0]]=1; places.push(p); } }); });
+  return {temp:true, day:new Date().getDay(), from:state.temp.from, to:state.temp.to, places:places};
+}
 function now(){
   const d = new Date();
   const team = teamOf(d);
   const cur = d.getHours()*60 + d.getMinutes();
   const info = {date:d, team:team, slot:null, next:null, open:false};
+  const ts = tempSlot(team);
+  if(ts){
+    info.team = team || '오늘';
+    const sp = slotSpan(ts);
+    if(cur >= sp[0] && cur <= sp[1]){ info.slot = ts; info.open = true; }
+    else if(cur < sp[0]) info.next = {slot:ts, at:ts.from};
+    return info;
+  }
   if(!team) return info;
   const today = SLOTS[team].filter(function(s){ return s.day===d.getDay(); });
   for(const s of today){
@@ -677,6 +741,7 @@ function absorb(d){
   state.soldOut = d.soldOut || {}; state.free = !!d.free;
   state.mode = d.mode === 'store' ? 'store' : 'class';
   state.survey = d.survey || JSON.parse(JSON.stringify(EMPTY_SURVEY));
+  state.temp = d.temp || null; state.storeTime = d.storeTime || null;
   const fresh = state.orders.filter(function(o){ return o.status==='new' && !seen.has(o.id); });
   renderAll();
   if(fresh.length) alarm(fresh);
@@ -788,6 +853,8 @@ function localMutate(a, p){
   if(a === 'menuout'){ state.soldOut[p.key] = (p.v === '1'); }
   if(a === 'free'){ state.free = (p.v === '1'); }
   if(a === 'mode'){ state.mode = (p.v === 'store') ? 'store' : 'class'; }
+  if(a === 'tempset'){ state.temp = p.v ? {from:p.v.split('~')[0], to:p.v.split('~')[1]} : null; }
+  if(a === 'storetime'){ state.storeTime = {open:p.v.split('~')[0], close:p.v.split('~')[1]}; }
   if(a === 'survey'){
     state._srows = state._srows || [];
     const key = p.dev + '|' + p.menu, day = ymd(new Date());
@@ -904,7 +971,7 @@ const recvChips=$('recvChips'), slotChips=$('slotChips');
 function renderNotice(){
   const n = now(), box = $('notice'), form = $('orderForm');
   if(isStore()){
-    const s = storeNow(), time = STORE.open+'~'+STORE.close;
+    const s = storeNow(), time = sOpen()+'~'+sClose();
     let ok = false;
     if(s.remain <= 0){
       box.className='notice closed';
@@ -917,10 +984,10 @@ function renderNotice(){
       box.innerHTML='<b>지금 주문할 수 있습니다</b><p>매장 주문 '+time+', 남은 순서 '+s.remain+'개</p>';
     } else if(s.weekday && s.before){
       box.className='notice closed';
-      box.innerHTML='<b>아직 주문 시간이 아닙니다</b><p>오늘 '+STORE.open+'부터 '+STORE.close+'까지 받습니다.</p>';
+      box.innerHTML='<b>아직 주문 시간이 아닙니다</b><p>오늘 '+sOpen()+'부터 '+sClose()+'까지 받습니다.</p>';
     } else {
       box.className='notice closed';
-      box.innerHTML='<b>지금은 주문을 받지 않습니다</b><p>매장 주문 시간은 평일 '+time+'입니다.</p>';
+      box.innerHTML='<b>지금은 주문을 받지 않습니다</b><p>'+(state.temp ? '오늘 매장 주문 시간은 ' : '매장 주문 시간은 평일 ')+time+'입니다.</p>';
     }
     form.classList.toggle('closed-mask', !ok);
     return ok;
@@ -1050,7 +1117,7 @@ function renderMode(){
   $('fPick').hidden = !st; $('fPlace').hidden = st;
   $('fSlot').hidden = st;  $('fQueue').hidden = !st;
   $('orderSub').textContent = st
-    ? '매장 운영 시간('+STORE.open+'~'+STORE.close+')에만 주문을 받습니다. 주문하면 순서 번호를 드립니다.'
+    ? '매장 운영 시간('+sOpen()+'~'+sClose()+')에만 주문을 받습니다. 주문하면 순서 번호를 드립니다.'
     : '바리스타 실습 시간에만 주문을 받습니다. 만들기와 배달도 같은 시간에 이루어집니다.';
   $('hOpt').textContent = st ? '온도 고르기' : '5. 온도';
   $('hQty').innerHTML = st ? '5. 몇 잔 <em>한 번에 '+STORE.maxCups+'잔까지</em>' : '6. 몇 잔';
@@ -1060,7 +1127,7 @@ function renderMode(){
   $('tumTitle').textContent = st ? '다 만들어서 찾아가길 기다리는 중' : '텀블러 기다리는 중';
   $('modeChips').innerHTML =
     '<button data-mode="class" aria-pressed="'+(!st)+'">교실 배달<small>조별 교시에 교실로 배달</small></button>'+
-    '<button data-mode="store" aria-pressed="'+st+'">매장<small>'+STORE.open+'~'+STORE.close+', 번호 순서로 '+STORE.maxOrders+'번까지</small></button>';
+    '<button data-mode="store" aria-pressed="'+st+'">매장<small>'+sOpen()+'~'+sClose()+', 번호 순서로 '+STORE.maxOrders+'번까지</small></button>';
 }
 $('modeChips').addEventListener('click', async function(e){
   const b=e.target.closest('button[data-mode]'); if(!b || b.dataset.mode===state.mode) return;
@@ -1071,12 +1138,17 @@ $('modeChips').addEventListener('click', async function(e){
 /* ===== 받는 시간 ===== */
 function currentSlots(){
   const n = now();
+  if(n.slot && n.slot.temp){
+    /* 임시 운영은 이미 지난 칸을 빼고 보여 준다 */
+    const cur = new Date().getHours()*60 + new Date().getMinutes();
+    return makeSlots(n.slot).filter(function(v){ return slotStart(v) + UNIT > cur; });
+  }
   if(n.slot) return makeSlots(n.slot);
   if(state.free){
-    const t = n.team || Object.keys(SLOTS)[0];
-    const d = new Date().getDay();
-    const s = SLOTS[t].find(function(x){ return x.day===d; }) || SLOTS[t][0];
-    return makeSlots(s);
+    /* 연습 모드: 지금 시각부터 1시간 동안 10분 단위 칸 */
+    const d = new Date(), a = Math.floor((d.getHours()*60 + d.getMinutes()) / UNIT) * UNIT, list = [];
+    for(let i = 0; i < 6; i++){ const t = a + i*UNIT; if(t + UNIT < 24*60) list.push(hm(t)+'~'+hm(t+UNIT)); }
+    return list;
   }
   return [];
 }
@@ -1266,7 +1338,7 @@ function renderNow(){
   const n=now(), bar=$('nowbar');
   if(isStore()){
     const s=storeNow();
-    bar.innerHTML='<b>매장 운영 '+STORE.open+'~'+STORE.close+(s.open?' (주문 받는 중)':'')+'</b>'+
+    bar.innerHTML='<b>매장 운영 '+sOpen()+'~'+sClose()+(s.open?' (주문 받는 중)':'')+'</b>'+
       '<div class="route"><span>받은 주문 '+s.used+' / '+STORE.maxOrders+'</span><span>한 번에 '+STORE.maxCups+'잔까지</span></div>';
     return;
   }
@@ -1500,6 +1572,42 @@ $('sAgain').onclick=function(){
   $('sThanks').hidden=true; $('surveyForm').hidden=false; renderSurvey(); window.scrollTo(0,0);
 };
 
+/* ===== 주문 시간 관리 (관리자) ===== */
+function renderTimeAdmin(){
+  const tc=$('tempCur'), sc=$('storeCur');
+  tc.textContent = state.temp ? state.temp.from+'~'+state.temp.to+' 적용 중' : '설정 없음';
+  tc.className = state.temp ? 'on' : '';
+  const so = (state.storeTime && state.storeTime.open) || STORE.open;
+  const sc2 = (state.storeTime && state.storeTime.close) || STORE.close;
+  sc.textContent = so+'~'+sc2;
+  const box = document.activeElement && document.activeElement.closest ? document.activeElement.closest('.tbox') : null;
+  if(!box){
+    if(state.temp){ $('tFrom').value = state.temp.from; $('tTo').value = state.temp.to; }
+    $('sFrom').value = so; $('sTo').value = sc2;
+  }
+}
+function readRange(a, b){
+  const f=$(a).value, t=$(b).value;
+  if(!/^\d{2}:\d{2}$/.test(f) || !/^\d{2}:\d{2}$/.test(t)){ toast('시작과 끝 시각을 모두 넣어 주세요.'); return null; }
+  if(mins(f) >= mins(t)){ toast('끝 시각은 시작 시각보다 늦어야 합니다.'); return null; }
+  return f+'~'+t;
+}
+$('tSet').onclick=async function(){
+  const v=readRange('tFrom','tTo'); if(!v) return;
+  try{ await send('tempset', {v:v}, 2); toast('오늘 '+v+' 동안 주문을 받습니다.'); }
+  catch(err){ toast(err.message || '적용하지 못했습니다.'); }
+};
+$('tClear').onclick=async function(){
+  if(!state.temp) return;
+  try{ await send('tempset', {v:''}, 2); $('tFrom').value=''; $('tTo').value=''; toast('임시 운영을 해제했습니다. 원래 시간표로 돌아갑니다.'); }
+  catch(err){ toast(err.message || '해제하지 못했습니다.'); }
+};
+$('sSet').onclick=async function(){
+  const v=readRange('sFrom','sTo'); if(!v) return;
+  try{ await send('storetime', {v:v}, 2); toast('매장 운영 시간을 '+v+'로 바꿨습니다.'); }
+  catch(err){ toast(err.message || '저장하지 못했습니다.'); }
+};
+
 /* ===== 만족도 결과 (바리스타 화면) ===== */
 function renderSurveyAdmin(){
   const d = (state.survey && state.survey[sv.range]) || {total:0, menus:[]};
@@ -1594,6 +1702,7 @@ tabB.onclick=function(){ show('bar'); };
    교직원이 실수로 주문 상태를 바꾸는 일을 막기 위해 기본값을 주문 화면으로 잠급니다. */
 (function(){
   const v = new URLSearchParams(location.search).get('v');
+  if(v !== 'all'){ $('adminZone').hidden = true; $('testBtn').hidden = true; }
   if(v === 'all') return;
   if(v === 'survey'){
     document.querySelector('.switcher .brand').innerHTML = '자인 카페 <span>만족도 평가</span>';
@@ -1606,7 +1715,7 @@ tabB.onclick=function(){ show('bar'); };
 /* ===== 렌더와 주기 작업 ===== */
 function renderAll(){
   renderMode(); renderPick(); renderQueue();
-  renderSurvey(); renderSurveyAdmin();
+  renderSurvey(); renderSurveyAdmin(); renderTimeAdmin();
   renderNotice(); renderRecv(); renderSlots(); renderQtyHint(); renderMenu();
   renderCart(); renderMine(); renderNow(); renderTimeline(); renderBoard(); renderMenuAdmin(); validate();
 }
@@ -1614,7 +1723,9 @@ function renderAll(){
 let lastSlotKey='';
 function clockTick(){
   const n=now();
-  const key=(n.team||'-')+'/'+(n.slot?n.slot.periods.join('-'):'-')+'/'+state.free;
+  const d=new Date();
+  const key=(n.team||'-')+'/'+(n.slot?(n.slot.temp?'T'+n.slot.from:n.slot.periods.join('-')):'-')+'/'+state.free+
+    (state.free && !n.slot ? '/'+Math.floor((d.getHours()*60+d.getMinutes())/UNIT) : '');
   if(key!==lastSlotKey){ lastSlotKey=key; renderSlots(); }
   renderNotice(); renderNow(); renderTimeline(); renderQueue(); validate();
 }
