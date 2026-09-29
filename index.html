@@ -12,6 +12,7 @@
   --shadow:0 2px 0 rgba(35,23,19,.12); --r:14px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 html,body{margin:0;padding:0}
 body{background:var(--paper);color:var(--ink);
   font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',system-ui,-apple-system,'Malgun Gothic',sans-serif;
@@ -229,6 +230,37 @@ input[type="text"]::placeholder{color:#A8968A}
 .tumzone h3{margin:6px 20px 0;font-size:17px;color:var(--ink-soft)}
 .mycard.call{border-color:var(--amber);background:#FFF6E4}
 .mycard .txt em{display:block;font-style:normal;font-size:14px;font-weight:800;color:#8E3A12;margin-top:4px}
+
+/* 매장 운영 */
+.queue{border:2px solid var(--line);background:var(--milk);border-radius:var(--r);padding:16px 18px;font-weight:700}
+.queue b{font-size:28px;font-variant-numeric:tabular-nums;color:var(--roast)}
+.queue p{margin:4px 0 0;font-size:14px;color:var(--ink-soft);font-weight:600}
+.t-head .pk{margin-left:auto;font-size:17px;font-weight:800;background:var(--paper-2);border-radius:8px;padding:5px 10px}
+
+/* 만족도 평가 */
+.stars{display:flex;gap:8px;flex-wrap:wrap}
+.stars button{width:58px;height:58px;border:2px solid var(--line);background:var(--milk);border-radius:12px;
+  font-size:32px;line-height:1;color:#D8CABB;padding:0}
+.stars button.on{color:var(--amber);border-color:var(--amber);background:#FFF6E4}
+.starlabel{margin:8px 0 0;font-size:15px;font-weight:700;color:var(--ink-soft);min-height:22px}
+.menu .rated{font-size:13px;font-weight:700;color:var(--leaf)}
+.thanks{border:2px solid var(--leaf);background:#E9F3EE;border-radius:var(--r);padding:24px 18px;text-align:center;margin-top:22px}
+.thanks b{display:block;font-size:20px;margin-bottom:6px}
+.thanks span{color:var(--ink-soft);font-size:15px}
+.thanks button{display:inline-block;margin-top:16px;border:none;background:var(--ink);color:var(--paper);
+  border-radius:12px;padding:14px 22px;font-weight:800}
+.shead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.shead .chips button{min-height:44px;padding:8px 16px}
+.shead .cnt{font-size:15px;font-weight:700;color:var(--ink-soft)}
+.slist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.slist li{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;background:var(--milk);
+  border:2px solid var(--line);border-radius:12px;padding:12px 14px}
+.slist li.none{color:var(--ink-soft);font-weight:700;justify-content:center}
+.slist .nm{font-weight:800;flex:1;min-width:110px}
+.slist .sc{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.slist .sc i{font-style:normal;color:var(--amber)}
+.slist .sc small{font-size:13px;color:var(--ink-soft);font-weight:700;margin-right:4px}
+.slist .n{font-size:14px;color:var(--ink-soft);font-weight:700;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -243,39 +275,49 @@ input[type="text"]::placeholder{color:#A8968A}
 <section class="view is-on" id="viewOrder">
   <div class="wrap">
     <h2>커피 주문하기</h2>
-    <p class="sub">바리스타 실습 시간에만 주문을 받습니다. 만들기와 배달도 같은 시간에 이루어집니다.</p>
+    <p class="sub" id="orderSub">바리스타 실습 시간에만 주문을 받습니다. 만들기와 배달도 같은 시간에 이루어집니다.</p>
 
     <div class="notice" id="notice"></div>
 
     <div id="orderForm">
-      <div class="field">
+      <div class="field" id="fPick" hidden>
+        <h3>1. 픽업 방법</h3>
+        <div class="chips" id="pickChips"></div>
+      </div>
+
+      <div class="field" id="fPlace">
         <h3>1. 받을 곳</h3>
         <input type="text" id="placeFree" placeholder="예: 초1-1, 보건실, 교무실" autocomplete="off" maxlength="24">
       </div>
 
       <div class="field">
-        <h3>2. 받는 방법</h3>
+        <h3 id="hRecv">2. 받는 방법</h3>
         <div class="chips" id="recvChips"></div>
         <p class="recvnote" id="recvNote" hidden></p>
       </div>
 
-      <div class="field">
-        <h3>3. 받는 시간 <em>15분 단위로 고릅니다</em></h3>
+      <div class="field" id="fSlot">
+        <h3>3. 받는 시간 <em>10분 단위로 고릅니다</em></h3>
         <div class="chips slots" id="slotChips"></div>
       </div>
 
+      <div class="field" id="fQueue" hidden>
+        <h3>3. 받는 순서</h3>
+        <div class="queue" id="queueBox"></div>
+      </div>
+
       <div class="field">
-        <h3>4. 메뉴 고르기</h3>
+        <h3 id="hMenu">4. 메뉴 고르기</h3>
         <div class="menu" id="menuGrid"></div>
       </div>
 
       <div class="field" id="optField" hidden>
-        <h3>5. 온도 <em id="optName"></em></h3>
+        <h3><span id="hOpt">5. 온도</span> <em id="optName"></em></h3>
         <div class="chips" id="optChips"></div>
       </div>
 
       <div class="field">
-        <h3>6. 몇 잔</h3>
+        <h3 id="hQty">6. 몇 잔</h3>
         <div class="qty">
           <button class="rnd" id="qMinus" aria-label="한 잔 줄이기">−</button>
           <output id="qNum">1</output>
@@ -291,7 +333,7 @@ input[type="text"]::placeholder{color:#A8968A}
       </div>
 
       <div class="field">
-        <h3>7. 주문자 이름</h3>
+        <h3 id="hWho">7. 주문자 이름</h3>
         <input type="text" id="who" placeholder="예: 김인식 선생님" autocomplete="off" maxlength="20">
       </div>
     </div>
@@ -312,7 +354,7 @@ input[type="text"]::placeholder{color:#A8968A}
     <div class="counts">
       <div class="pill">새 주문 <b id="cNew">0</b></div>
       <div class="pill">만드는 중 <b id="cMaking">0</b></div>
-      <div class="pill">텀블러 대기 <b id="cTum">0</b></div>
+      <div class="pill"><span id="cTumLabel">텀블러 대기</span> <b id="cTum">0</b></div>
       <div class="pill">오늘 완료 <b id="cDone">0</b></div>
     </div>
     <span class="netdot" id="netdot2">연결 확인 중</span>
@@ -331,13 +373,26 @@ input[type="text"]::placeholder{color:#A8968A}
   <div class="board" id="board"></div>
 
   <div class="tumzone" id="tumzone" hidden>
-    <h3>텀블러 기다리는 중</h3>
+    <h3 id="tumTitle">텀블러 기다리는 중</h3>
     <div class="board" id="tumBoard"></div>
   </div>
 
   <div class="panel">
     <h3>완료한 주문</h3>
     <ul class="done" id="doneList"><li>아직 없습니다</li></ul>
+
+    <h3>만족도 평가</h3>
+    <div class="shead">
+      <div class="chips" id="sRange">
+        <button data-r="today" aria-pressed="true">오늘</button>
+        <button data-r="all" aria-pressed="false">전체</button>
+      </div>
+      <span class="cnt" id="sCount"></span>
+    </div>
+    <ul class="slist" id="sList"></ul>
+
+    <h3>운영 방식</h3>
+    <div class="chips" id="modeChips"></div>
 
     <h3>메뉴 관리</h3>
     <ul class="mlist" id="menuList"></ul>
@@ -356,6 +411,42 @@ input[type="text"]::placeholder{color:#A8968A}
 
     <h3>연습 설정</h3>
     <div class="chips"><button id="freeBtn" aria-pressed="false">수업 시간이 아니어도 주문 받기</button></div>
+  </div>
+</section>
+
+<!-- ===== 만족도 평가 화면 (주소 뒤에 ?v=survey) ===== -->
+<section class="view" id="viewSurvey">
+  <div class="wrap">
+    <h2>드신 음료는 어떠셨나요?</h2>
+    <p class="sub">별을 눌러 알려 주세요. 바리스타 학생들이 다음 실습에 참고합니다.</p>
+
+    <div id="surveyForm">
+      <div class="field">
+        <h3>1. 드신 메뉴를 눌러 주세요</h3>
+        <div class="menu" id="sMenu"></div>
+      </div>
+      <div class="field">
+        <h3>2. 맛을 평가해 주세요</h3>
+        <div class="stars" id="sTaste" role="radiogroup" aria-label="맛 평가"></div>
+        <p class="starlabel" id="sTasteLb"></p>
+      </div>
+      <div class="field">
+        <h3>3. 서비스를 평가해 주세요</h3>
+        <div class="stars" id="sService" role="radiogroup" aria-label="서비스 평가"></div>
+        <p class="starlabel" id="sServiceLb"></p>
+      </div>
+    </div>
+
+    <div class="thanks" id="sThanks" hidden>
+      <b>평가를 보냈습니다. 고맙습니다!</b>
+      <span id="sThanksTxt">바리스타 학생들에게 전해 드릴게요.</span><br>
+      <button id="sAgain">다른 메뉴도 평가하기</button>
+    </div>
+  </div>
+
+  <div class="send">
+    <p class="hint" id="sHint"></p>
+    <button id="sSend">평가 보내기</button>
   </div>
 </section>
 
@@ -381,7 +472,7 @@ const PERIODS = {
    PREP: 수업 시작 후 준비 시간 (이 동안은 만들지 않음)
    WRAP: 수업 종료 전 정리 시간 (이 동안은 만들지 않음)
    UNIT: 수령 시간 단위(분). 단위에 못 미치는 자투리는 버림 */
-const PREP = 10, WRAP = 5, UNIT = 15;
+const PREP = 5, WRAP = 5, UNIT = 10;
 
 /* 3) 조별 주문 가능 주간 — 시작 월요일부터 2주 간격으로 자동 계산합니다.
       2026-09-14 주간이 1조, 그다음 주가 2조입니다. */
@@ -413,6 +504,14 @@ const SLOTS = {
   ]
 };
 
+/* 6) 매장 운영 — 바리스타 화면의 '운영 방식'에서 '매장'을 고르면 이 규칙으로 받습니다.
+      maxOrders, maxCups 는 Apps Script 의 STORE_MAX_ORDERS, STORE_MAX_CUPS 와 같게 맞춥니다. */
+const STORE = { open:'13:50', close:'14:10', maxOrders:20, maxCups:2 };
+const PICKUP = [
+  {v:'매장 이용',        sub:'매장에서 마시고 가요', cups:['매장 컵']},
+  {v:'밖으로 가져갈게요', sub:'포장해서 가져가요',   cups:['1회용 컵','개인 텀블러']}
+];
+
 /* 5) 서버가 연결되기 전에 보여 줄 기본 메뉴 (연결되면 시트 내용으로 바뀝니다) */
 const SEED_MENU = [
   {key:'ame', name:'아메리카노', liquid:'#3E2417', foam:false, temps:['따뜻하게','차갑게']},
@@ -438,9 +537,18 @@ function esc(s){
 }
 
 const ME = Math.random().toString(36).slice(2);
-let state = { rev:'0', day:'', orders:[], menu:JSON.parse(JSON.stringify(SEED_MENU)), soldOut:{}, free:false };
+const EMPTY_SURVEY = {today:{total:0, menus:[]}, all:{total:0, menus:[]}};
+let state = { rev:'0', day:'', orders:[], menu:JSON.parse(JSON.stringify(SEED_MENU)), soldOut:{}, free:false,
+              mode:'class', survey:JSON.parse(JSON.stringify(EMPTY_SURVEY)) };
 let myIds = [];
-let pick  = { key:null, temp:null, qty:1, cart:[], head:0, recv:'배달', slot:null };
+let pick  = { key:null, temp:null, qty:1, cart:[], head:0, recv:'배달', slot:null, pickup:null, cup:null };
+let sv    = { menu:null, taste:0, service:0, range:'today' };
+let lastMode = null, readyShown = new Set();
+
+/* 만족도 평가용 기기 표시 — 같은 기기에서 같은 메뉴를 하루에 두 번 평가하지 않도록 */
+let DEV = '';
+try{ DEV = localStorage.getItem('zc_dev') || ''; }catch(e){}
+if(!DEV){ DEV = 'd' + Math.random().toString(36).slice(2, 12); try{ localStorage.setItem('zc_dev', DEV); }catch(e){} }
 let newColor = SWATCH[0];
 let seen = new Set();
 let armed = false, ac = null, wakeLock = null;
@@ -451,6 +559,20 @@ const NEXT  = { new:'making', making:null, ready:'done' };
 const LABEL_MINE = { new:'접수했어요', making:'만들고 있어요',
                      ready:'만들어 두었어요', done:'다 받았어요' };
 const LABEL_BAR  = { new:'새 주문', making:'만드는 중', ready:'텀블러 기다림' };
+const LABEL_MINE_STORE = { new:'접수했어요', making:'만들고 있어요', ready:'다 됐어요', done:'받아 가셨어요' };
+const LABEL_BAR_STORE  = { new:'새 주문', making:'만드는 중', ready:'찾아가길 기다림' };
+
+function isStore(){ return state.mode === 'store'; }
+function cartCups(){ return pick.cart.reduce(function(a, c){ return a + c.qty; }, 0); }
+function storeNow(){
+  const d = new Date(), wd = d.getDay(), cur = d.getHours()*60 + d.getMinutes();
+  const store = state.orders.filter(function(o){ return o.mode === 'store'; });
+  let last = 0; store.forEach(function(o){ if(+o.no > last) last = +o.no; });
+  const weekday = wd >= 1 && wd <= 5;
+  return { weekday:weekday, open: weekday && cur >= mins(STORE.open) && cur <= mins(STORE.close),
+           before: cur < mins(STORE.open), used:store.length, next:last + 1,
+           remain: Math.max(0, STORE.maxOrders - store.length) };
+}
 
 /* ===== 날짜와 시간 ===== */
 function ymd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
@@ -553,6 +675,8 @@ function absorb(d){
   state.rev = d.rev; state.day = d.day;
   state.orders = d.orders || []; state.menu = d.menu || state.menu;
   state.soldOut = d.soldOut || {}; state.free = !!d.free;
+  state.mode = d.mode === 'store' ? 'store' : 'class';
+  state.survey = d.survey || JSON.parse(JSON.stringify(EMPTY_SURVEY));
   const fresh = state.orders.filter(function(o){ return o.status==='new' && !seen.has(o.id); });
   renderAll();
   if(fresh.length) alarm(fresh);
@@ -622,17 +746,27 @@ function localMutate(a, p){
     const dup = state.orders.find(function(o){ return o.sendKey && o.sendKey === p.key; });
     if(dup){ p.__newId = dup.id; return; }
     const data = JSON.parse(p.payload);
-    let no = 1;
-    state.orders.forEach(function(o){ if(o.no >= no) no = o.no + 1; });
     const id = 'L' + Date.now() + '-' + (++localSeq);
     const d = new Date();
-    if(state.orders.some(function(o){ return o.slot === data.slot; })){
+    if(data.mode === 'store'){
+      const sn = storeNow();
+      if(sn.remain <= 0) throw new Error('오늘 주문이 마감되었습니다.');
+      state.orders.push({id:id, no:sn.next, at:hm(d.getHours()*60+d.getMinutes()),
+        who:data.who, place:data.pickup, slot:'', items:data.items, recv:'매장',
+        mode:'store', pickup:data.pickup, cup:data.cup, status:'new', sendKey:p.key});
+      p.__newId = id; p.__newNo = sn.next;
+      localSave(); renderAll(); alarm([state.orders[state.orders.length-1]]);
+      return;
+    }
+    let no = 1;
+    state.orders.forEach(function(o){ if(o.mode !== 'store' && o.no >= no) no = o.no + 1; });
+    if(state.orders.some(function(o){ return o.slot && o.slot === data.slot; })){
       throw new Error('그 시간은 방금 다른 곳에서 예약했습니다. 다른 시간을 골라 주세요.');
     }
     state.orders.push({id:id, no:no, at:hm(d.getHours()*60+d.getMinutes()),
       who:data.who, place:data.place, slot:data.slot, items:data.items,
-      recv:data.recv || '배달', status:'new', sendKey:p.key});
-    p.__newId = id;
+      recv:data.recv || '배달', mode:'class', status:'new', sendKey:p.key});
+    p.__newId = id; p.__newNo = no;
   }
   if(a === 'status' || a === 'cancel'){
     const to = a === 'cancel' ? 'cancel' : p.to;
@@ -653,10 +787,35 @@ function localMutate(a, p){
   }
   if(a === 'menuout'){ state.soldOut[p.key] = (p.v === '1'); }
   if(a === 'free'){ state.free = (p.v === '1'); }
+  if(a === 'mode'){ state.mode = (p.v === 'store') ? 'store' : 'class'; }
+  if(a === 'survey'){
+    state._srows = state._srows || [];
+    const key = p.dev + '|' + p.menu, day = ymd(new Date());
+    if(state._srows.some(function(r){ return r.day === day && r.key === key; })){
+      throw new Error('이 메뉴는 오늘 이미 평가하셨습니다. 고맙습니다.');
+    }
+    state._srows.push({day:day, menu:p.menu, t:+p.taste, s:+p.service, key:key});
+    state.survey = surveySum(state._srows, day);
+  }
 
   const fresh = state.orders.filter(function(o){ return o.status==='new' && !seen.has(o.id); });
   localSave(); renderAll();
   if(fresh.length) alarm(fresh);
+}
+
+function surveySum(rows, day){
+  function agg(list){
+    const m = {};
+    list.forEach(function(r){
+      const x = m[r.menu] || (m[r.menu] = {name:r.menu, n:0, t:0, s:0});
+      x.n++; x.t += r.t; x.s += r.s;
+    });
+    const menus = Object.keys(m).map(function(k){
+      const x = m[k]; return {name:x.name, n:x.n, taste:Math.round(x.t/x.n*10)/10, service:Math.round(x.s/x.n*10)/10};
+    });
+    return {total:list.length, menus:menus};
+  }
+  return { today: agg(rows.filter(function(r){ return r.day === day; })), all: agg(rows) };
 }
 
 /* ===== 내 주문 기억 ===== */
@@ -699,11 +858,26 @@ function tone(f,start,dur,vol){
   o.start(ac.currentTime+start); o.stop(ac.currentTime+start+dur+0.05);
 }
 function ding(){ if(!ac) return; try{ tone(988,0,0.55,0.28); tone(659,0.28,0.75,0.28); }catch(e){} }
+function cupWord(c){ return c === '개인 텀블러' ? '텀블러' : c; }
 function sayText(o){
+  if(o.mode === 'store'){
+    return o.no+'번, '+(o.pickup === '매장 이용' ? '매장 이용' : '포장')+', '+cupWord(o.cup)+', '+o.who+'. '+
+      o.items.map(function(i){ return i.temp+' '+i.name+' '+i.qty+'잔'; }).join(', ');
+  }
   return o.no+'번, '+String(o.slot||'').replace('~',' 부터 ')+', '+
     (o.recv==='텀블러' ? '텀블러 주문, ' : o.place+', ')+o.who+'. '+
     o.items.map(function(i){ return i.temp+' '+i.name+' '+i.qty+'잔'; }).join(', ')+
     (o.recv==='텀블러' ? '. 미리 만들어 두세요' : '');
+}
+function callText(o){
+  return o.no+'번 손님, 주문하신 음료가 나왔습니다.'+(o.cup === '개인 텀블러' ? ' 텀블러를 가지고 와 주세요.' : '');
+}
+function sayRaw(text){
+  if(!('speechSynthesis' in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang='ko-KR'; u.rate=0.9; speechSynthesis.speak(u);
+  }catch(e){}
 }
 function speak(list){
   if(!('speechSynthesis' in window)) return;
@@ -729,6 +903,28 @@ const recvChips=$('recvChips'), slotChips=$('slotChips');
 
 function renderNotice(){
   const n = now(), box = $('notice'), form = $('orderForm');
+  if(isStore()){
+    const s = storeNow(), time = STORE.open+'~'+STORE.close;
+    let ok = false;
+    if(s.remain <= 0){
+      box.className='notice closed';
+      box.innerHTML='<b>오늘 주문이 마감되었습니다</b><p>준비한 '+STORE.maxOrders+'번까지 모두 주문을 받았습니다.</p>';
+    } else if(state.free && !s.open){
+      ok = true; box.className='notice open';
+      box.innerHTML='<b>연습 모드</b><p>매장 운영 시간이 아니지만 주문을 받고 있습니다. 바리스타 화면에서 끌 수 있습니다.</p>';
+    } else if(s.open){
+      ok = true; box.className='notice open';
+      box.innerHTML='<b>지금 주문할 수 있습니다</b><p>매장 주문 '+time+', 남은 순서 '+s.remain+'개</p>';
+    } else if(s.weekday && s.before){
+      box.className='notice closed';
+      box.innerHTML='<b>아직 주문 시간이 아닙니다</b><p>오늘 '+STORE.open+'부터 '+STORE.close+'까지 받습니다.</p>';
+    } else {
+      box.className='notice closed';
+      box.innerHTML='<b>지금은 주문을 받지 않습니다</b><p>매장 주문 시간은 평일 '+time+'입니다.</p>';
+    }
+    form.classList.toggle('closed-mask', !ok);
+    return ok;
+  }
   const usable = n.open || state.free;
   if(state.free && !n.open){
     box.className='notice open';
@@ -769,8 +965,17 @@ $('placeFree').addEventListener('input', function(){
   renderQtyHint(); validate();
 });
 
+function qtyCap(){ return isStore() ? Math.max(0, STORE.maxCups - cartCups()) : 20; }
 function renderQtyHint(){
   const box=$('qtyHint');
+  if(isStore()){
+    const cap = qtyCap();
+    if(cap > 0 && pick.qty > cap){ pick.qty = cap; qNum.textContent = pick.qty; }
+    box.innerHTML = cap > 0
+      ? '한 번에 <b>'+STORE.maxCups+'잔</b>까지 주문할 수 있습니다. 지금 '+cartCups()+'잔 담았습니다.'
+      : '<b>'+STORE.maxCups+'잔</b>을 모두 담았습니다. 더 담으려면 담은 메뉴를 빼 주세요.';
+    return;
+  }
   if(pick.head>0 && pick.qty!==pick.head && pick.recv!=='텀블러'){
     box.innerHTML='이곳은 보통 <b>'+pick.head+'명</b>입니다 <button type="button" id="qtyApply">'+pick.head+'잔으로</button>';
   } else box.innerHTML='';
@@ -782,6 +987,20 @@ $('qtyHint').addEventListener('click', function(e){
 
 /* ===== 받는 방법 ===== */
 function renderRecv(){
+  if(isStore()){
+    const note = $('recvNote');
+    const pk = PICKUP.find(function(x){ return x.v === pick.pickup; });
+    if(!pk){
+      recvChips.innerHTML = '<p style="margin:0;color:var(--ink-soft);font-size:15px">먼저 픽업 방법을 골라 주세요.</p>';
+      note.hidden = true; return;
+    }
+    recvChips.innerHTML = pk.cups.map(function(c){
+      return '<button data-r="'+esc(c)+'" aria-pressed="'+(pick.cup===c)+'">'+esc(c)+'</button>';
+    }).join('');
+    note.innerHTML = '<b>번호를 부르면 텀블러를 가지고 와 주세요.</b> 만든 음료를 텀블러에 옮겨 담아 드립니다.';
+    note.hidden = pick.cup !== '개인 텀블러';
+    return;
+  }
   recvChips.innerHTML =
     '<button data-r="배달" aria-pressed="'+(pick.recv==='배달')+'">교실로 배달<small>바리스타가 가져다 드립니다</small></button>'+
     '<button data-r="텀블러" aria-pressed="'+(pick.recv==='텀블러')+'">개인 텀블러<small>미리 만들어 둡니다</small></button>';
@@ -793,7 +1012,60 @@ function renderRecv(){
 }
 recvChips.addEventListener('click', function(e){
   const b=e.target.closest('button[data-r]'); if(!b) return;
-  pick.recv=b.dataset.r; renderRecv(); renderQtyHint(); validate();
+  if(isStore()) pick.cup=b.dataset.r; else pick.recv=b.dataset.r;
+  renderRecv(); renderQtyHint(); validate();
+});
+
+/* ===== 픽업 방법 (매장) ===== */
+function renderPick(){
+  $('pickChips').innerHTML = PICKUP.map(function(p){
+    return '<button data-p="'+esc(p.v)+'" aria-pressed="'+(pick.pickup===p.v)+'">'+esc(p.v)+'<small>'+esc(p.sub)+'</small></button>';
+  }).join('');
+}
+$('pickChips').addEventListener('click', function(e){
+  const b=e.target.closest('button[data-p]'); if(!b) return;
+  pick.pickup=b.dataset.p;
+  const pk=PICKUP.find(function(x){ return x.v===pick.pickup; });
+  if(pk.cups.length===1) pick.cup=pk.cups[0];
+  else if(pk.cups.indexOf(pick.cup)<0) pick.cup=null;
+  renderPick(); renderRecv(); validate();
+});
+
+/* ===== 받는 순서 (매장) ===== */
+function renderQueue(){
+  const s = storeNow();
+  $('queueBox').innerHTML = s.remain > 0
+    ? '지금 주문하면 <b>'+s.next+'번</b><p>주문을 보내면 순서 번호를 드립니다. 번호를 부르면 받아 가세요. '+STORE.maxOrders+'번까지 받습니다 (남은 순서 '+s.remain+'개).</p>'
+    : '<b>마감</b><p>오늘 준비한 '+STORE.maxOrders+'번까지 모두 주문을 받았습니다.</p>';
+}
+
+/* ===== 운영 방식에 따라 주문 단계 바꾸기 ===== */
+function renderMode(){
+  const st = isStore();
+  if(lastMode !== state.mode){
+    lastMode = state.mode;
+    pick.cart=[]; pick.slot=null; pick.pickup=null; pick.cup=null; pick.recv='배달'; pick.qty=1;
+    qNum.textContent = 1;
+  }
+  $('fPick').hidden = !st; $('fPlace').hidden = st;
+  $('fSlot').hidden = st;  $('fQueue').hidden = !st;
+  $('orderSub').textContent = st
+    ? '매장 운영 시간('+STORE.open+'~'+STORE.close+')에만 주문을 받습니다. 주문하면 순서 번호를 드립니다.'
+    : '바리스타 실습 시간에만 주문을 받습니다. 만들기와 배달도 같은 시간에 이루어집니다.';
+  $('hOpt').textContent = st ? '온도 고르기' : '5. 온도';
+  $('hQty').innerHTML = st ? '5. 몇 잔 <em>한 번에 '+STORE.maxCups+'잔까지</em>' : '6. 몇 잔';
+  $('hWho').textContent = st ? '6. 주문자 이름' : '7. 주문자 이름';
+
+  $('cTumLabel').textContent = st ? '찾아가길 기다림' : '텀블러 대기';
+  $('tumTitle').textContent = st ? '다 만들어서 찾아가길 기다리는 중' : '텀블러 기다리는 중';
+  $('modeChips').innerHTML =
+    '<button data-mode="class" aria-pressed="'+(!st)+'">교실 배달<small>조별 교시에 교실로 배달</small></button>'+
+    '<button data-mode="store" aria-pressed="'+st+'">매장<small>'+STORE.open+'~'+STORE.close+', 번호 순서로 '+STORE.maxOrders+'번까지</small></button>';
+}
+$('modeChips').addEventListener('click', async function(e){
+  const b=e.target.closest('button[data-mode]'); if(!b || b.dataset.mode===state.mode) return;
+  try{ await send('mode', {v:b.dataset.mode}, 2); toast(b.dataset.mode==='store' ? '매장 주문으로 바꿨습니다.' : '교실 배달 주문으로 바꿨습니다.'); }
+  catch(err){ toast(err.message || '바꾸지 못했습니다.'); }
 });
 
 /* ===== 받는 시간 ===== */
@@ -855,12 +1127,17 @@ optChips.addEventListener('click', function(e){
 });
 
 $('qMinus').onclick=function(){ pick.qty=Math.max(1,pick.qty-1); qNum.textContent=pick.qty; renderQtyHint(); };
-$('qPlus').onclick =function(){ pick.qty=Math.min(20,pick.qty+1); qNum.textContent=pick.qty; renderQtyHint(); };
+$('qPlus').onclick =function(){
+  const cap = qtyCap();
+  if(isStore() && pick.qty >= cap){ toast('한 번에 '+STORE.maxCups+'잔까지 주문할 수 있습니다.'); return; }
+  pick.qty=Math.min(cap,pick.qty+1); qNum.textContent=pick.qty; renderQtyHint();
+};
 
 $('addBtn').onclick=function(){
   if(!pick.key){ hint.textContent='먼저 메뉴를 골라 주세요.'; return; }
   if(state.soldOut[pick.key]){ toast('방금 품절된 메뉴입니다.'); renderMenu(); return; }
   const m=state.menu.find(function(x){ return x.key===pick.key; }); if(!m) return;
+  if(isStore() && pick.qty > qtyCap()){ toast('한 번에 '+STORE.maxCups+'잔까지 주문할 수 있습니다.'); return; }
   const same=pick.cart.find(function(c){ return c.key===pick.key && c.temp===pick.temp; });
   if(same) same.qty+=pick.qty;
   else pick.cart.push({key:m.key, name:m.name, temp:pick.temp, qty:pick.qty});
@@ -869,6 +1146,7 @@ $('addBtn').onclick=function(){
 };
 
 function renderCart(){
+  renderQtyHint();
   if(!pick.cart.length){ cartBox.className='cart empty'; cartBox.textContent='아직 담은 메뉴가 없습니다.'; return; }
   cartBox.className='cart';
   cartBox.innerHTML='<ul>'+pick.cart.map(function(c,i){
@@ -898,6 +1176,14 @@ function validate(){
   let msg='';
   if(busy) msg='';
   else if(!usable) msg='지금은 주문할 수 없습니다.';
+  else if(isStore()){
+    if(!pick.pickup) msg='픽업 방법을 골라 주세요.';
+    else if(!pick.cup) msg='받는 방법을 골라 주세요.';
+    else if(!pick.cart.length) msg='메뉴를 담아 주세요.';
+    else if(soldIn) msg='품절된 메뉴를 빼 주세요.';
+    else if(cartCups() > STORE.maxCups) msg='한 번에 '+STORE.maxCups+'잔까지 주문할 수 있습니다.';
+    else if(!who) msg='주문자 이름을 적어 주세요.';
+  }
   else if(!placeValue()) msg='받을 곳을 골라 주세요.';
   else if(!pick.slot) msg='받는 시간을 골라 주세요.';
   else if(!pick.cart.length) msg='메뉴를 담아 주세요.';
@@ -910,8 +1196,11 @@ function validate(){
 $('sendBtn').onclick=async function(){
   if(busy) return;
   const btn=$('sendBtn');
-  const payload={ who:$('who').value.trim(), place:placeValue(), recv:pick.recv, slot:pick.slot,
-    items:pick.cart.map(function(c){ return {name:c.name,temp:c.temp,qty:c.qty}; }) };
+  const items=pick.cart.map(function(c){ return {name:c.name,temp:c.temp,qty:c.qty}; });
+  const store=isStore();
+  const payload= store
+    ? { mode:'store', who:$('who').value.trim(), pickup:pick.pickup, cup:pick.cup, items:items }
+    : { mode:'class', who:$('who').value.trim(), place:placeValue(), recv:pick.recv, slot:pick.slot, items:items };
   /* 전송키: 같은 주문을 두 번 보내도 서버가 한 건으로 처리합니다 */
   const p={payload:JSON.stringify(payload), key:ME+'-'+Date.now().toString(36)};
   busy=true; btn.disabled=true; btn.textContent='보내는 중…'; hint.textContent='';
@@ -919,8 +1208,10 @@ $('sendBtn').onclick=async function(){
     const d = await send('order', p, 3);
     const id = (d && d.newId) || p.__newId;
     if(id && myIds.indexOf(id)<0){ myIds.push(id); saveMine(); }
-    pick.cart=[]; pick.slot=null; renderCart(); renderSlots(); renderMine();
-    toast(pick.recv==='텀블러'
+    const no = (d && d.newNo) || p.__newNo;
+    pick.cart=[]; pick.slot=null; pick.qty=1; qNum.textContent=1; renderCart(); renderSlots(); renderMine();
+    if(store) toast('주문을 보냈습니다. '+(no ? no+'번입니다. ' : '')+'번호를 부르면 받아 가세요.');
+    else toast(pick.recv==='텀블러'
       ? '주문을 보냈습니다. 다 되면 알려 드릴게요.'
       : '주문을 보냈습니다.');
     window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
@@ -936,6 +1227,21 @@ function renderMine(){
   const mine=state.orders.filter(function(o){ return myIds.indexOf(o.id)>=0; }).slice().reverse();
   if(!mine.length){ box.innerHTML=''; return; }
   box.innerHTML='<h3 style="font-size:16px;margin:0">내 주문</h3>'+mine.map(function(o){
+    if(o.mode==='store'){
+      const call = o.status==='ready';
+      if(call && !readyShown.has(o.id)){
+        readyShown.add(o.id);
+        toast(o.no+'번 음료가 나왔습니다. 받아 가세요.');
+        try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
+      }
+      return '<div class="mycard'+(call?' call':'')+'"><div class="no">'+(+o.no)+'</div>'+
+      '<div class="txt"><b>'+esc(o.items.map(function(i){ return i.name+' '+i.qty+'잔'; }).join(', '))+'</b>'+
+      '<span>'+esc(o.pickup)+' / '+esc(o.cup)+' / '+esc(o.who)+'</span>'+
+      (call ? '<em>'+(o.cup==='개인 텀블러' ? '텀블러를 가지고 받으러 와 주세요' : '카운터에서 받아 가세요')+'</em>' : '')+
+      '</div>'+
+      '<div class="state '+esc(o.status)+'">'+(LABEL_MINE_STORE[o.status]||'')+'</div>'+
+      (o.status==='new'?'<button class="cancel" data-cancel="'+esc(o.id)+'">취소</button>':'')+'</div>';
+    }
     const tum = o.recv==='텀블러';
     return '<div class="mycard'+(tum && o.status==='ready' ? ' call' : '')+'"><div class="no">'+(+o.no)+'</div>'+
     '<div class="txt"><b>'+esc(o.items.map(function(i){ return i.name+' '+i.qty+'잔'; }).join(', '))+'</b>'+
@@ -958,6 +1264,12 @@ const board=$('board'), tumBoard=$('tumBoard');
 
 function renderNow(){
   const n=now(), bar=$('nowbar');
+  if(isStore()){
+    const s=storeNow();
+    bar.innerHTML='<b>매장 운영 '+STORE.open+'~'+STORE.close+(s.open?' (주문 받는 중)':'')+'</b>'+
+      '<div class="route"><span>받은 주문 '+s.used+' / '+STORE.maxOrders+'</span><span>한 번에 '+STORE.maxCups+'잔까지</span></div>';
+    return;
+  }
   if(n.open){
     bar.innerHTML='<b>'+esc(n.team)+' '+esc(slotLabel(n.slot))+'</b>'+
       '<div class="route">'+n.slot.places.map(function(p){ return '<span>'+esc(p[0])+(p[1]?' '+(+p[1])+'명':'')+'</span>'; }).join('')+'</div>';
@@ -970,7 +1282,27 @@ function renderNow(){
   }
 }
 
+function ticketStore(o){
+  let btn;
+  if(o.status==='new') btn='<button class="go" data-go="'+esc(o.id)+'">만들기 시작</button>';
+  else if(o.status==='making') btn='<button class="keep" data-keep="'+esc(o.id)+'">다 됐어요 (번호 부르기)</button>';
+  else btn='<button class="fin" data-fin="'+esc(o.id)+'">가져가셨어요</button>';
+  const cupTxt = o.cup==='개인 텀블러' ? '개인 텀블러에 옮겨 담기' : esc(o.cup)+'에 담기';
+  return '<article class="ticket '+esc(o.status)+(seen.has(o.id)?'':' enter')+'">'+
+  '<div class="t-head"><div class="no">'+(+o.no)+'</div>'+
+  '<div class="pk">'+(o.pickup==='매장 이용'?'매장':'포장')+'</div>'+
+  '<div class="state '+esc(o.status)+'">'+(LABEL_BAR_STORE[o.status]||'')+'</div></div>'+
+  '<div class="t-who">'+esc(o.who)+'<span>'+cupTxt+'</span></div>'+
+  '<ul class="t-items">'+o.items.map(function(i){
+    return '<li>'+esc(i.name)+'<span class="tag '+(i.temp==='차갑게'?'ice':'hot')+'">'+esc(i.temp)+'</span>'+
+    '<span class="n">'+(+i.qty)+'</span></li>';
+  }).join('')+'</ul>'+
+  '<div class="t-act"><button class="say" data-say="'+esc(o.id)+'" aria-label="'+(o.status==='ready'?'번호 다시 부르기':'주문 다시 듣기')+'">🔊</button>'+
+  btn+'</div></article>';
+}
+
 function ticket(o){
+  if(o.mode==='store') return ticketStore(o);
   const tum = o.recv==='텀블러';
   let btn;
   if(o.status==='new') btn='<button class="go" data-go="'+esc(o.id)+'">만들기 시작</button>';
@@ -994,7 +1326,7 @@ function ticket(o){
 }
 
 function renderTimeline(){
-  const list = currentSlots(), taken = takenSlots(), box = $('timeline');
+  const list = isStore() ? [] : currentSlots(), taken = takenSlots(), box = $('timeline');
   const nowMin = new Date().getHours()*60 + new Date().getMinutes();
   if(!list.length){ box.innerHTML=''; box.hidden=true; return; }
   box.hidden=false;
@@ -1007,7 +1339,10 @@ function renderTimeline(){
 }
 
 function renderBoard(){
-  const bySlot=function(a,b){ return slotStart(a.slot)-slotStart(b.slot) || a.no-b.no; };
+  const bySlot=function(a,b){
+    const sa = a.mode==='store' ? 0 : slotStart(a.slot), sb = b.mode==='store' ? 0 : slotStart(b.slot);
+    return sa-sb || a.no-b.no;
+  };
   const live=state.orders.filter(function(o){ return o.status==='new' || o.status==='making'; }).sort(bySlot);
   const wait=state.orders.filter(function(o){ return o.status==='ready'; }).sort(bySlot);
 
@@ -1026,19 +1361,27 @@ function renderBoard(){
   $('cTum').textContent=wait.length;
   $('doneList').innerHTML = done.length
     ? done.slice().reverse().map(function(o){
-        return '<li>'+(+o.no)+'번 '+esc(o.who)+' / '+(o.recv==='텀블러'?'텀블러':esc(o.place))+'</li>'; }).join('')
+        return '<li>'+(+o.no)+'번 '+esc(o.who)+' / '+(o.mode==='store'?esc(o.pickup):(o.recv==='텀블러'?'텀블러':esc(o.place)))+'</li>'; }).join('')
     : '<li>아직 없습니다</li>';
 }
 
 async function boardClick(e){
   const say=e.target.closest('[data-say]');
-  if(say){ const o=state.orders.find(function(x){ return x.id===say.dataset.say; }); if(o) speak([o]); return; }
+  if(say){
+    const o=state.orders.find(function(x){ return x.id===say.dataset.say; });
+    if(o){ if(o.mode==='store' && o.status==='ready') sayRaw(callText(o)); else speak([o]); }
+    return;
+  }
   const go=e.target.closest('[data-go]'), keep=e.target.closest('[data-keep]'), fin=e.target.closest('[data-fin]');
   const b=go||keep||fin; if(!b || b.disabled) return;
   const id = b.dataset.go || b.dataset.keep || b.dataset.fin;
   const to = go ? 'making' : (keep ? 'ready' : 'done');
   b.disabled=true; b.textContent='잠시만…';
-  try{ await send('status', {id:id, to:to}, 3); }
+  const o=state.orders.find(function(x){ return x.id===id; });
+  try{
+    await send('status', {id:id, to:to}, 3);
+    if(to==='ready' && o && o.mode==='store') sayRaw(callText(o));
+  }
   catch(err){ toast(err.message || '바꾸지 못했습니다. 다시 눌러 주세요.'); renderBoard(); }
 }
 board.addEventListener('click', boardClick);
@@ -1080,11 +1423,119 @@ $('freeBtn').onclick=async function(){
   catch(err){ toast(err.message || '바꾸지 못했습니다.'); }
 };
 
+/* ===== 만족도 평가 화면 ===== */
+const STAR_WORD = ['', '별로예요', '아쉬워요', '보통이에요', '좋아요', '최고예요'];
+function ratedToday(){
+  try{
+    const o = JSON.parse(localStorage.getItem('zc_rated') || '{}');
+    return o.day === ymd(new Date()) ? (o.names || []) : [];
+  }catch(e){ return []; }
+}
+function markRated(name){
+  const list = ratedToday(); if(list.indexOf(name) < 0) list.push(name);
+  try{ localStorage.setItem('zc_rated', JSON.stringify({day:ymd(new Date()), names:list})); }catch(e){}
+}
+function starsHtml(v, kind){
+  let h = '';
+  for(let i = 1; i <= 5; i++){
+    h += '<button type="button" role="radio" data-'+kind+'="'+i+'" class="'+(i<=v?'on':'')+'" aria-checked="'+(i===v)+'" aria-label="5점 중 '+i+'점">★</button>';
+  }
+  return h;
+}
+function renderSurvey(){
+  const done = ratedToday();
+  if(sv.menu && done.indexOf(sv.menu) >= 0) sv.menu = null;
+  $('sMenu').innerHTML = state.menu.map(function(m){
+    const r = done.indexOf(m.name) >= 0;
+    return '<button data-m="'+esc(m.name)+'" aria-pressed="'+(sv.menu===m.name)+'"'+(r?' disabled':'')+'>'+
+      cup(m,false)+'<span>'+esc(m.name)+'</span>'+(r?'<span class="rated">평가했어요</span>':'')+'</button>';
+  }).join('');
+  $('sTaste').innerHTML = starsHtml(sv.taste, 't');
+  $('sService').innerHTML = starsHtml(sv.service, 's');
+  $('sTasteLb').textContent = STAR_WORD[sv.taste];
+  $('sServiceLb').textContent = STAR_WORD[sv.service];
+  const left = state.menu.some(function(m){ return done.indexOf(m.name) < 0; });
+  $('sAgain').hidden = !left;
+  validateSurvey();
+}
+function validateSurvey(){
+  let msg = '';
+  if(busy) msg = '';
+  else if(!sv.menu) msg = '드신 메뉴를 눌러 주세요.';
+  else if(!sv.taste) msg = '맛 별점을 골라 주세요.';
+  else if(!sv.service) msg = '서비스 별점을 골라 주세요.';
+  $('sHint').textContent = $('sThanks').hidden ? msg : '';
+  $('sSend').disabled = busy || !!msg || !$('sThanks').hidden;
+}
+$('sMenu').addEventListener('click', function(e){
+  const b=e.target.closest('button[data-m]'); if(!b || b.disabled) return;
+  sv.menu=b.dataset.m; renderSurvey();
+});
+$('sTaste').addEventListener('click', function(e){
+  const b=e.target.closest('button[data-t]'); if(!b) return;
+  sv.taste=+b.dataset.t; renderSurvey();
+});
+$('sService').addEventListener('click', function(e){
+  const b=e.target.closest('button[data-s]'); if(!b) return;
+  sv.service=+b.dataset.s; renderSurvey();
+});
+$('sSend').onclick=async function(){
+  if(busy || !sv.menu || !sv.taste || !sv.service) return;
+  const btn=$('sSend'), name=sv.menu;
+  busy=true; btn.disabled=true; btn.textContent='보내는 중…';
+  try{
+    await send('survey', {menu:name, taste:sv.taste, service:sv.service, dev:DEV}, 3);
+    markRated(name);
+    sv = {menu:null, taste:0, service:0, range:sv.range};
+    $('surveyForm').hidden=true; $('sThanks').hidden=false;
+    $('sThanksTxt').textContent = name+' 평가를 바리스타 학생들에게 전해 드릴게요.';
+  }catch(e){
+    if(e.fromServer && /이미/.test(e.message)){ markRated(name); sv.menu=null; }
+    toast(e.fromServer ? e.message : '평가를 보내지 못했습니다. 잠시 뒤 다시 눌러 주세요.');
+  }finally{
+    busy=false; btn.textContent='평가 보내기'; renderSurvey();
+  }
+};
+$('sAgain').onclick=function(){
+  $('sThanks').hidden=true; $('surveyForm').hidden=false; renderSurvey(); window.scrollTo(0,0);
+};
+
+/* ===== 만족도 결과 (바리스타 화면) ===== */
+function renderSurveyAdmin(){
+  const d = (state.survey && state.survey[sv.range]) || {total:0, menus:[]};
+  Array.prototype.forEach.call($('sRange').querySelectorAll('button'), function(b){
+    b.setAttribute('aria-pressed', b.dataset.r===sv.range);
+  });
+  $('sCount').textContent = '평가 '+(+d.total||0)+'건';
+  const list = (d.menus || []).slice().sort(function(a,b){ return b.n-a.n; });
+  $('sList').innerHTML = list.length
+    ? list.map(function(m){
+        return '<li><span class="nm">'+esc(m.name)+'</span>'+
+          '<span class="sc"><small>맛</small><i>★</i> '+(+m.taste).toFixed(1)+'</span>'+
+          '<span class="sc"><small>서비스</small><i>★</i> '+(+m.service).toFixed(1)+'</span>'+
+          '<span class="n">'+(+m.n)+'명</span></li>';
+      }).join('')
+    : '<li class="none">'+(sv.range==='today'?'오늘':'아직')+' 들어온 평가가 없습니다</li>';
+}
+$('sRange').addEventListener('click', function(e){
+  const b=e.target.closest('button[data-r]'); if(!b) return;
+  sv.range=b.dataset.r; renderSurveyAdmin();
+});
+
 /* ===== 연습 주문 ===== */
 $('testBtn').onclick=async function(){
   const names=['이수진 선생님','박도윤 선생님','최민서 선생님','행정실 주무관님'];
   const avail=state.menu.filter(function(x){ return !state.soldOut[x.key]; });
   const m=avail[Math.floor(Math.random()*avail.length)]||state.menu[0];
+  if(isStore()){
+    const pk=PICKUP[Math.floor(Math.random()*PICKUP.length)];
+    const sp={ mode:'store', who:names[Math.floor(Math.random()*names.length)], pickup:pk.v,
+      cup:pk.cups[Math.floor(Math.random()*pk.cups.length)],
+      items:[{name:m.name, temp:m.temps[Math.floor(Math.random()*m.temps.length)], qty:1+Math.floor(Math.random()*STORE.maxCups)}] };
+    try{ await send('order', {payload:JSON.stringify(sp), key:ME+'-t'+Date.now().toString(36)}, 2); }
+    catch(err){ toast(err.message || '연습 주문을 넣지 못했습니다.'); }
+    return;
+  }
   const places=currentPlaces();
   const p=places.length?places[Math.floor(Math.random()*places.length)]:['교무실',2];
   const tum=Math.random()<0.4;
@@ -1126,10 +1577,10 @@ document.addEventListener('visibilitychange', function(){
 const tabO=$('tabOrder'), tabB=$('tabBar');
 function show(which){
   curView = which;
-  const isO = which==='order';
-  $('viewOrder').classList.toggle('is-on', isO);
-  $('viewBar').classList.toggle('is-on', !isO);
-  tabO.setAttribute('aria-pressed', isO); tabB.setAttribute('aria-pressed', !isO);
+  $('viewOrder').classList.toggle('is-on', which==='order');
+  $('viewBar').classList.toggle('is-on', which==='bar');
+  $('viewSurvey').classList.toggle('is-on', which==='survey');
+  tabO.setAttribute('aria-pressed', which==='order'); tabB.setAttribute('aria-pressed', which==='bar');
   window.scrollTo(0,0);
 }
 tabO.onclick=function(){ show('order'); };
@@ -1139,16 +1590,23 @@ tabB.onclick=function(){ show('bar'); };
    기본 주소            : 주문 화면만 (교직원에게 공유하는 주소)
    주소 뒤에 ?v=bar     : 바리스타 화면만 (바리스타실 태블릿)
    주소 뒤에 ?v=all     : 두 화면 모두 (교사 점검용)
+   주소 뒤에 ?v=survey  : 만족도 평가 화면만 (QR 코드로 안내하는 주소)
    교직원이 실수로 주문 상태를 바꾸는 일을 막기 위해 기본값을 주문 화면으로 잠급니다. */
 (function(){
   const v = new URLSearchParams(location.search).get('v');
   if(v === 'all') return;
-  show(v === 'bar' ? 'bar' : 'order');
+  if(v === 'survey'){
+    document.querySelector('.switcher .brand').innerHTML = '자인 카페 <span>만족도 평가</span>';
+    document.title = '자인 카페 만족도 평가';
+  }
+  show(v === 'bar' ? 'bar' : (v === 'survey' ? 'survey' : 'order'));
   document.querySelector('.switcher').classList.add('locked');
 })();
 
 /* ===== 렌더와 주기 작업 ===== */
 function renderAll(){
+  renderMode(); renderPick(); renderQueue();
+  renderSurvey(); renderSurveyAdmin();
   renderNotice(); renderRecv(); renderSlots(); renderQtyHint(); renderMenu();
   renderCart(); renderMine(); renderNow(); renderTimeline(); renderBoard(); renderMenuAdmin(); validate();
 }
@@ -1158,11 +1616,14 @@ function clockTick(){
   const n=now();
   const key=(n.team||'-')+'/'+(n.slot?n.slot.periods.join('-'):'-')+'/'+state.free;
   if(key!==lastSlotKey){ lastSlotKey=key; renderSlots(); }
-  renderNotice(); renderNow(); renderTimeline(); validate();
+  renderNotice(); renderNow(); renderTimeline(); renderQueue(); validate();
 }
 
 function pollTick(){
-  const base = (curView==='bar') ? 5000 : 15000;
+  const waiting = state.orders.some(function(o){
+    return o.mode==='store' && myIds.indexOf(o.id)>=0 && o.status!=='done';
+  });
+  const base = (curView==='bar' || (curView==='order' && waiting)) ? 5000 : 15000;
   const wait = base + Math.min(failStreak, 4) * 5000;
   if(!document.hidden) pull();
   setTimeout(pollTick, wait);
