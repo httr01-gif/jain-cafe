@@ -232,10 +232,11 @@ input[type="text"]::placeholder{color:#A8968A}
 .mycard .txt em{display:block;font-style:normal;font-size:14px;font-weight:800;color:#8E3A12;margin-top:4px}
 
 /* 매장 운영 */
-.queue{border:2px solid var(--line);background:var(--milk);border-radius:var(--r);padding:16px 18px;font-weight:700}
-.queue b{font-size:28px;font-variant-numeric:tabular-nums;color:var(--roast)}
-.queue p{margin:4px 0 0;font-size:14px;color:var(--ink-soft);font-weight:600}
 .t-head .pk{margin-left:auto;font-size:17px;font-weight:800;background:var(--paper-2);border-radius:8px;padding:5px 10px}
+
+/* 주문 방법 */
+#kindChips button{flex:1 1 200px;min-height:72px;font-size:19px}
+#kindChips button[disabled]{opacity:.45;cursor:not-allowed}
 
 /* 관리자 전용 */
 .adminhead{margin:30px 0 0;padding:12px 16px;border-radius:12px;background:var(--ink);color:var(--paper);
@@ -294,23 +295,29 @@ input[type="text"]::placeholder{color:#A8968A}
 <section class="view is-on" id="viewOrder">
   <div class="wrap">
     <h2>커피 주문하기</h2>
-    <p class="sub" id="orderSub">바리스타 실습 시간에만 주문을 받습니다. 만들기와 배달도 같은 시간에 이루어집니다.</p>
+    <p class="sub" id="orderSub">교실 배달은 바리스타 실습 시간에, 직접 받으러 가는 주문은 매장 운영 시간에 받습니다.</p>
 
     <div class="notice" id="notice"></div>
 
     <div id="orderForm">
+      <div class="field" id="fKind">
+        <h3>1. 주문 방법</h3>
+        <div class="chips" id="kindChips"></div>
+      </div>
+
+      <div id="flowBox" hidden>
       <div class="field" id="fPick" hidden>
-        <h3>1. 픽업은 어떻게 하시겠어요?</h3>
+        <h3>2. 픽업은 어떻게 하시겠어요?</h3>
         <div class="chips" id="pickChips"></div>
       </div>
 
       <div class="field" id="fPlace">
-        <h3>1. 받을 곳</h3>
+        <h3>2. 받을 곳</h3>
         <input type="text" id="placeFree" placeholder="예: 초1-1, 보건실, 교무실" autocomplete="off" maxlength="24">
       </div>
 
       <div class="field" id="fRecv">
-        <h3 id="hRecv">2. 받는 방법</h3>
+        <h3 id="hRecv">3. 받는 방법</h3>
         <div class="chips" id="recvChips"></div>
         <p class="recvnote" id="recvNote" hidden></p>
       </div>
@@ -351,6 +358,7 @@ input[type="text"]::placeholder{color:#A8968A}
         <h3 id="hWho">7. 주문자 이름</h3>
         <input type="text" id="who" placeholder="예: 김인식 선생님" autocomplete="off" maxlength="20">
       </div>
+      </div>
     </div>
 
     <div class="mine" id="mine"></div>
@@ -369,7 +377,7 @@ input[type="text"]::placeholder{color:#A8968A}
     <div class="counts">
       <div class="pill">새 주문 <b id="cNew">0</b></div>
       <div class="pill">만드는 중 <b id="cMaking">0</b></div>
-      <div class="pill"><span id="cTumLabel">텀블러 대기</span> <b id="cTum">0</b></div>
+      <div class="pill"><span id="cTumLabel">찾아가길 기다림</span> <b id="cTum">0</b></div>
       <div class="pill">오늘 완료 <b id="cDone">0</b></div>
     </div>
     <span class="netdot" id="netdot2">연결 확인 중</span>
@@ -388,7 +396,7 @@ input[type="text"]::placeholder{color:#A8968A}
   <div class="board" id="board"></div>
 
   <div class="tumzone" id="tumzone" hidden>
-    <h3 id="tumTitle">텀블러 기다리는 중</h3>
+    <h3 id="tumTitle">다 만들어서 찾아가길 기다리는 중</h3>
     <div class="board" id="tumBoard"></div>
   </div>
 
@@ -409,9 +417,6 @@ input[type="text"]::placeholder{color:#A8968A}
     <div id="adminZone">
     <p class="adminhead">관리자 설정<span>관리자 주소(?v=all)에서만 보입니다</span></p>
 
-    <h3>운영 방식</h3>
-    <div class="chips" id="modeChips"></div>
-
     <h3>주문 시간 관리</h3>
     <div class="tbox">
       <div class="cur"><b>오늘 임시 운영</b><span id="tempCur">설정 없음</span></div>
@@ -421,16 +426,16 @@ input[type="text"]::placeholder{color:#A8968A}
         <button class="ok" id="tSet">오늘만 적용</button>
         <button class="off" id="tClear">해제</button>
       </div>
-      <p>오늘 하루만 정해진 시간표 대신 이 시간에 주문을 받습니다. 교실 배달은 10분 단위 칸, 매장은 번호 순서로 받습니다. 내일이 되면 자동으로 풀립니다.</p>
+      <p>오늘 하루만 정해진 시간표 대신 이 시간에 교실 배달과 직접 수령 주문을 모두 받습니다. 내일이 되면 자동으로 풀립니다.</p>
     </div>
     <div class="tbox">
-      <div class="cur"><b>매장 운영 시간</b><span id="storeCur"></span></div>
+      <div class="cur"><b>직접 수령(매장) 운영 시간</b><span id="storeCur"></span></div>
       <div class="row">
         <input type="time" id="sFrom" step="300" aria-label="매장 시작 시각"> ~
         <input type="time" id="sTo" step="300" aria-label="매장 끝 시각">
         <button class="ok" id="sSet">저장</button>
       </div>
-      <p>운영 방식이 '매장'일 때 평일 이 시간에 주문을 받습니다.</p>
+      <p>'직접 받으러 갈게요' 주문을 평일 이 시간에 받습니다. 교실 배달은 조별 교시 시간표대로 받습니다.</p>
     </div>
 
     <h3>메뉴 관리</h3>
@@ -545,8 +550,9 @@ const SLOTS = {
   ]
 };
 
-/* 6) 매장 운영 — 바리스타 화면의 '운영 방식'에서 '매장'을 고르면 이 규칙으로 받습니다.
-      maxOrders, maxCups 는 Apps Script 의 STORE_MAX_ORDERS, STORE_MAX_CUPS 와 같게 맞춥니다. */
+/* 6) 직접 수령(매장) — 주문자가 '직접 받으러 갈게요'를 고르면 이 규칙으로 받습니다.
+      open, close 는 관리자 화면에서 바꿀 수 있고, maxOrders(하루 건수), maxCups 는
+      Apps Script 의 STORE_MAX_ORDERS, STORE_MAX_CUPS 와 같게 맞춥니다. */
 const STORE = { open:'13:50', close:'14:10', maxOrders:20, maxCups:2 };
 const PICKUP = [
   {v:'매장 이용',        sub:'매장에서 마시고 가요'},
@@ -583,9 +589,9 @@ const EMPTY_SURVEY = {today:{total:0, menus:[]}, all:{total:0, menus:[]}};
 let state = { rev:'0', day:'', orders:[], menu:JSON.parse(JSON.stringify(SEED_MENU)), soldOut:{}, free:false,
               mode:'class', survey:JSON.parse(JSON.stringify(EMPTY_SURVEY)), temp:null, storeTime:null };
 let myIds = [];
-let pick  = { key:null, temp:null, qty:1, cart:[], head:0, recv:'배달', slot:null, pickup:null, cup:null };
+let pick  = { key:null, temp:null, qty:1, cart:[], head:0, recv:'배달', slot:null, pickup:null, cup:null, kind:null };
 let sv    = { menu:null, taste:0, service:0, range:'today' };
-let lastMode = null, readyShown = new Set();
+let readyShown = new Set();
 
 /* 만족도 평가용 기기 표시 — 같은 기기에서 같은 메뉴를 하루에 두 번 평가하지 않도록 */
 let DEV = '';
@@ -604,7 +610,10 @@ const LABEL_BAR  = { new:'새 주문', making:'만드는 중', ready:'텀블러 
 const LABEL_MINE_STORE = { new:'접수했어요', making:'만들고 있어요', ready:'다 됐어요', done:'받아 가셨어요' };
 const LABEL_BAR_STORE  = { new:'새 주문', making:'만드는 중', ready:'찾아가길 기다림' };
 
-function isStore(){ return state.mode === 'store'; }
+/* 주문자가 고른 주문 방법: null, 'class'(교실로 배달), 'store'(직접 받으러 가기) */
+function isStore(){ return pick.kind === 'store'; }
+function classAvail(){ return state.free || now().open; }
+function storeAvail(){ const s = storeNow(); return (state.free || s.open) && s.remain > 0; }
 /* 매장 운영 시간: 오늘 임시 운영 > 관리자가 저장한 시간 > 설정 구역 기본값 */
 function sOpen(){ return state.temp ? state.temp.from : ((state.storeTime && state.storeTime.open) || STORE.open); }
 function sClose(){ return state.temp ? state.temp.to : ((state.storeTime && state.storeTime.close) || STORE.close); }
@@ -736,7 +745,6 @@ function absorb(d){
   state.rev = d.rev; state.day = d.day;
   state.orders = d.orders || []; state.menu = d.menu || state.menu;
   state.soldOut = d.soldOut || {}; state.free = !!d.free;
-  state.mode = d.mode === 'store' ? 'store' : 'class';
   state.survey = d.survey || JSON.parse(JSON.stringify(EMPTY_SURVEY));
   state.temp = d.temp || null; state.storeTime = d.storeTime || null;
   const fresh = state.orders.filter(function(o){ return o.status==='new' && !seen.has(o.id); });
@@ -812,16 +820,17 @@ function localMutate(a, p){
     const d = new Date();
     if(data.mode === 'store'){
       const sn = storeNow();
-      if(sn.remain <= 0) throw new Error('오늘 주문이 마감되었습니다.');
-      state.orders.push({id:id, no:sn.next, at:hm(d.getHours()*60+d.getMinutes()),
+      if(sn.remain <= 0) throw new Error('오늘 직접 수령 주문이 마감되었습니다.');
+      let sno = 1; state.orders.forEach(function(o){ if(o.no >= sno) sno = o.no + 1; });
+      state.orders.push({id:id, no:sno, at:hm(d.getHours()*60+d.getMinutes()),
         who:data.who, place:data.pickup, slot:'', items:data.items, recv:'매장',
         mode:'store', pickup:data.pickup, cup:data.cup, status:'new', sendKey:p.key});
-      p.__newId = id; p.__newNo = sn.next;
+      p.__newId = id; p.__newNo = sno;
       localSave(); renderAll(); alarm([state.orders[state.orders.length-1]]);
       return;
     }
     let no = 1;
-    state.orders.forEach(function(o){ if(o.mode !== 'store' && o.no >= no) no = o.no + 1; });
+    state.orders.forEach(function(o){ if(o.no >= no) no = o.no + 1; });
     if(state.orders.some(function(o){ return o.slot && o.slot === data.slot; })){
       throw new Error('그 시간은 방금 다른 곳에서 예약했습니다. 다른 시간을 골라 주세요.');
     }
@@ -849,7 +858,6 @@ function localMutate(a, p){
   }
   if(a === 'menuout'){ state.soldOut[p.key] = (p.v === '1'); }
   if(a === 'free'){ state.free = (p.v === '1'); }
-  if(a === 'mode'){ state.mode = (p.v === 'store') ? 'store' : 'class'; }
   if(a === 'tempset'){ state.temp = p.v ? {from:p.v.split('~')[0], to:p.v.split('~')[1]} : null; }
   if(a === 'storetime'){ state.storeTime = {open:p.v.split('~')[0], close:p.v.split('~')[1]}; }
   if(a === 'survey'){
@@ -965,48 +973,35 @@ const menuGrid=$('menuGrid'), optField=$('optField'), optChips=$('optChips'), op
 const qNum=$('qNum'), cartBox=$('cart'), hint=$('hint');
 const recvChips=$('recvChips'), slotChips=$('slotChips');
 
+function classLine(n){
+  if(n.open) return '교실로 배달: 지금 받는 중 ('+esc(n.team)+' '+esc(slotLabel(n.slot))+')';
+  if(n.team && n.next) return '교실로 배달: 오늘 '+esc(n.next.at)+'부터';
+  if(n.team) return '교실로 배달: 오늘은 끝났습니다';
+  return '교실로 배달: 이번 주는 없습니다';
+}
+function storeLine(s){
+  const time = sOpen()+'~'+sClose();
+  if(s.remain <= 0) return '직접 수령: 오늘 준비한 '+STORE.maxOrders+'건 마감';
+  if(s.open) return '직접 수령: 지금 받는 중 ('+time+', 남은 '+s.remain+'건)';
+  if(s.weekday && s.before) return '직접 수령: 오늘 '+sOpen()+'부터 '+sClose()+'까지';
+  return '직접 수령: '+(state.temp ? '오늘 ' : '평일 ')+time;
+}
 function renderNotice(){
-  const n = now(), box = $('notice'), form = $('orderForm');
-  if(isStore()){
-    const s = storeNow(), time = sOpen()+'~'+sClose();
-    let ok = false;
-    if(s.remain <= 0){
-      box.className='notice closed';
-      box.innerHTML='<b>오늘 주문이 마감되었습니다</b><p>준비한 '+STORE.maxOrders+'번까지 모두 주문을 받았습니다.</p>';
-    } else if(state.free && !s.open){
-      ok = true; box.className='notice open';
-      box.innerHTML='<b>연습 모드</b><p>매장 운영 시간이 아니지만 주문을 받고 있습니다. 바리스타 화면에서 끌 수 있습니다.</p>';
-    } else if(s.open){
-      ok = true; box.className='notice open';
-      box.innerHTML='<b>지금 주문할 수 있습니다</b><p>매장 주문 '+time+', 남은 순서 '+s.remain+'개</p>';
-    } else if(s.weekday && s.before){
-      box.className='notice closed';
-      box.innerHTML='<b>아직 주문 시간이 아닙니다</b><p>오늘 '+sOpen()+'부터 '+sClose()+'까지 받습니다.</p>';
-    } else {
-      box.className='notice closed';
-      box.innerHTML='<b>지금은 주문을 받지 않습니다</b><p>'+(state.temp ? '오늘 매장 주문 시간은 ' : '매장 주문 시간은 평일 ')+time+'입니다.</p>';
-    }
-    form.classList.toggle('closed-mask', !ok);
-    return ok;
-  }
-  const usable = n.open || state.free;
-  if(state.free && !n.open){
+  const n = now(), s = storeNow(), box = $('notice'), form = $('orderForm');
+  const ca = classAvail(), sa = storeAvail();
+  const usable = pick.kind ? (pick.kind === 'store' ? sa : ca) : (ca || sa);
+  const lines = '<p>'+classLine(n)+'<br>'+storeLine(s)+'</p>';
+  if(state.free){
     box.className='notice open';
-    box.innerHTML='<b>연습 모드</b><p>수업 시간이 아니지만 주문을 받고 있습니다. 바리스타 화면에서 끌 수 있습니다.</p>';
-  } else if(n.open){
+    box.innerHTML='<b>연습 모드</b><p>운영 시간이 아니어도 주문을 받고 있습니다. 관리자 화면에서 끌 수 있습니다.</p>';
+  } else if(ca || sa){
     box.className='notice open';
-    box.innerHTML='<b>지금 주문할 수 있습니다</b><p>'+esc(n.team)+' '+esc(slotLabel(n.slot))+'</p>';
-  } else if(n.team && n.next){
-    box.className='notice closed';
-    box.innerHTML='<b>아직 주문 시간이 아닙니다</b><p>오늘 '+esc(n.next.at)+'부터 받습니다. '+esc(n.team)+' '+esc(slotLabel(n.next.slot))+'</p>';
-  } else if(n.team){
-    box.className='notice closed';
-    box.innerHTML='<b>오늘 주문은 끝났습니다</b><p>'+esc(n.team)+' 주간입니다. 다음 실습 시간에 다시 주문해 주세요.</p>';
+    box.innerHTML='<b>지금 주문할 수 있습니다</b>'+lines;
   } else {
     box.className='notice closed';
-    box.innerHTML='<b>이번 주는 주문을 받지 않습니다</b><p>주문 가능 주간이 아닙니다.</p>';
+    box.innerHTML='<b>지금은 주문을 받지 않습니다</b>'+lines;
   }
-  form.classList.toggle('closed-mask', !usable);
+  form.classList.toggle('closed-mask', !(ca || sa));
   return usable;
 }
 
@@ -1071,7 +1066,7 @@ function renderRecv(){
 }
 recvChips.addEventListener('click', function(e){
   const b=e.target.closest('button[data-r]'); if(!b) return;
-  if(isStore()) pick.cup=b.dataset.r; else pick.recv=b.dataset.r;
+  if(isStore()) pick.cup=b.dataset.r;
   renderRecv(); renderQtyHint(); validate();
 });
 
@@ -1087,36 +1082,36 @@ $('pickChips').addEventListener('click', function(e){
   renderPick(); validate();
 });
 
-/* ===== 운영 방식에 따라 주문 단계 바꾸기 ===== */
-function renderMode(){
-  const st = isStore();
-  if(lastMode !== state.mode){
-    lastMode = state.mode;
-    pick.cart=[]; pick.slot=null; pick.pickup=null; pick.cup=null; pick.recv='배달'; pick.qty=1;
-    qNum.textContent = 1;
-  }
-  $('fPick').hidden = !st; $('fPlace').hidden = st;
-  $('fSlot').hidden = st;
-  /* 매장: 주문자 이름을 받는 방법 바로 뒤(3번)로, 교실 배달: 담은 메뉴 뒤(7번)로 */
+/* ===== 주문 방법(교실로 배달 / 직접 받으러 갈게요)에 따라 단계 바꾸기 ===== */
+function renderKind(){
+  const ca = classAvail(), sa = storeAvail(), n = now(), sn = storeNow();
+  /* 고른 방법이 닫히면 선택을 풀어 다시 고르게 한다 */
+  if(pick.kind === 'class' && !ca) pick.kind = null;
+  if(pick.kind === 'store' && !sa) pick.kind = null;
+  const cSub = ca ? '바리스타가 교실로 가져다 드립니다' : (n.team && n.next ? '오늘 '+n.next.at+'부터' : '지금은 받지 않습니다');
+  const sSub = sa ? '바리스타실에서 번호로 불러 드립니다'
+    : (sn.remain <= 0 ? '오늘 주문 마감' : (sn.weekday && sn.before ? '오늘 '+sOpen()+'부터' : '지금은 받지 않습니다'));
+  $('kindChips').innerHTML =
+    '<button data-k="class" aria-pressed="'+(pick.kind==='class')+'"'+(ca?'':' disabled')+'>교실로 배달<small>'+esc(cSub)+'</small></button>'+
+    '<button data-k="store" aria-pressed="'+(pick.kind==='store')+'"'+(sa?'':' disabled')+'>직접 받으러 갈게요<small>'+esc(sSub)+'</small></button>';
+
+  const st = pick.kind === 'store';
+  $('flowBox').hidden = !pick.kind;
+  $('fPick').hidden = !st; $('fRecv').hidden = !st;
+  $('fPlace').hidden = st; $('fSlot').hidden = st;
+  /* 직접 수령: 주문자 이름을 받는 방법 바로 뒤(4번)로, 교실 배달: 담은 메뉴 뒤(6번)로 */
   const who = $('fWho'), anchor = st ? $('fRecv') : $('fCart');
   if(anchor.nextElementSibling !== who) anchor.parentNode.insertBefore(who, anchor.nextElementSibling);
-  $('orderSub').textContent = st
-    ? '매장 운영 시간('+sOpen()+'~'+sClose()+')에만 주문을 받습니다. 주문하면 순서 번호를 드립니다.'
-    : '바리스타 실습 시간에만 주문을 받습니다. 만들기와 배달도 같은 시간에 이루어집니다.';
-  $('hOpt').textContent = st ? '온도 고르기' : '5. 온도';
-  $('hQty').innerHTML = st ? '5. 몇 잔 <em>한 번에 '+STORE.maxCups+'잔까지</em>' : '6. 몇 잔';
-  $('hWho').textContent = st ? '3. 주문자 이름' : '7. 주문자 이름';
-
-  $('cTumLabel').textContent = st ? '찾아가길 기다림' : '텀블러 대기';
-  $('tumTitle').textContent = st ? '다 만들어서 찾아가길 기다리는 중' : '텀블러 기다리는 중';
-  $('modeChips').innerHTML =
-    '<button data-mode="class" aria-pressed="'+(!st)+'">교실 배달<small>조별 교시에 교실로 배달</small></button>'+
-    '<button data-mode="store" aria-pressed="'+st+'">매장<small>'+sOpen()+'~'+sClose()+', 번호 순서로 '+STORE.maxOrders+'번까지</small></button>';
+  $('hMenu').textContent = st ? '5. 메뉴 고르기' : '4. 메뉴 고르기';
+  $('hOpt').textContent = '온도 고르기';
+  $('hQty').innerHTML = st ? '6. 몇 잔 <em>한 번에 '+STORE.maxCups+'잔까지</em>' : '5. 몇 잔';
+  $('hWho').textContent = st ? '4. 주문자 이름' : '6. 주문자 이름';
 }
-$('modeChips').addEventListener('click', async function(e){
-  const b=e.target.closest('button[data-mode]'); if(!b || b.dataset.mode===state.mode) return;
-  try{ await send('mode', {v:b.dataset.mode}, 2); toast(b.dataset.mode==='store' ? '매장 주문으로 바꿨습니다.' : '교실 배달 주문으로 바꿨습니다.'); }
-  catch(err){ toast(err.message || '바꾸지 못했습니다.'); }
+$('kindChips').addEventListener('click', function(e){
+  const b=e.target.closest('button[data-k]'); if(!b || b.disabled) return;
+  pick.kind=b.dataset.k;
+  if(pick.kind==='class') pick.recv='배달';
+  renderKind(); renderRecv(); renderQtyHint(); renderSlots(); validate();
 });
 
 /* ===== 받는 시간 ===== */
@@ -1231,6 +1226,7 @@ function validate(){
   const soldIn = pick.cart.some(function(c){ return state.soldOut[c.key]; });
   let msg='';
   if(busy) msg='';
+  else if(!pick.kind) msg='주문 방법을 골라 주세요.';
   else if(!usable) msg='지금은 주문할 수 없습니다.';
   else if(isStore()){
     if(!pick.pickup) msg='픽업 방법을 골라 주세요.';
@@ -1320,12 +1316,14 @@ const board=$('board'), tumBoard=$('tumBoard');
 
 function renderNow(){
   const n=now(), bar=$('nowbar');
-  if(isStore()){
-    const s=storeNow();
-    bar.innerHTML='<b>매장 운영 '+sOpen()+'~'+sClose()+(s.open?' (주문 받는 중)':'')+'</b>'+
-      '<div class="route"><span>받은 주문 '+s.used+' / '+STORE.maxOrders+'</span><span>한 번에 '+STORE.maxCups+'잔까지</span></div>';
-    return;
-  }
+  const sn=storeNow();
+  const storeTag='<span>직접 수령 '+sOpen()+'~'+sClose()+(sn.open?' 받는 중':'')+', '+sn.used+' / '+STORE.maxOrders+'건</span>';
+  renderNowClass(n, bar);
+  const r = bar.querySelector('.route');
+  if(r) r.insertAdjacentHTML('beforeend', storeTag);
+  else bar.insertAdjacentHTML('beforeend', '<div class="route">'+storeTag+'</div>');
+}
+function renderNowClass(n, bar){
   if(n.open){
     bar.innerHTML='<b>'+esc(n.team)+' '+esc(slotLabel(n.slot))+'</b>'+
       '<div class="route">'+n.slot.places.map(function(p){ return '<span>'+esc(p[0])+(p[1]?' '+(+p[1])+'명':'')+'</span>'; }).join('')+'</div>';
@@ -1382,7 +1380,7 @@ function ticket(o){
 }
 
 function renderTimeline(){
-  const list = isStore() ? [] : currentSlots(), taken = takenSlots(), box = $('timeline');
+  const list = currentSlots(), taken = takenSlots(), box = $('timeline');
   const nowMin = new Date().getHours()*60 + new Date().getMinutes();
   if(!list.length){ box.innerHTML=''; box.hidden=true; return; }
   box.hidden=false;
@@ -1619,7 +1617,9 @@ $('testBtn').onclick=async function(){
   const names=['이수진 선생님','박도윤 선생님','최민서 선생님','행정실 주무관님'];
   const avail=state.menu.filter(function(x){ return !state.soldOut[x.key]; });
   const m=avail[Math.floor(Math.random()*avail.length)]||state.menu[0];
-  if(isStore()){
+  const kinds=[]; if(classAvail()) kinds.push('class'); if(storeAvail()) kinds.push('store');
+  if(!kinds.length){ toast('지금은 열린 주문 방법이 없습니다. 연습 모드를 켜 주세요.'); return; }
+  if(kinds[Math.floor(Math.random()*kinds.length)]==='store'){
     const pk=PICKUP[Math.floor(Math.random()*PICKUP.length)];
     const sp={ mode:'store', who:names[Math.floor(Math.random()*names.length)], pickup:pk.v,
       cup:CUPS[Math.floor(Math.random()*CUPS.length)],
@@ -1630,7 +1630,7 @@ $('testBtn').onclick=async function(){
   }
   const places=currentPlaces();
   const p=places.length?places[Math.floor(Math.random()*places.length)]:['교무실',2];
-  const tum=Math.random()<0.4;
+  const tum=false;
   const taken=takenSlots();
   const freeSlots=currentSlots().filter(function(v){ return !taken[v]; });
   if(!freeSlots.length){ toast('남은 시간이 없습니다.'); return; }
@@ -1698,7 +1698,7 @@ tabB.onclick=function(){ show('bar'); };
 
 /* ===== 렌더와 주기 작업 ===== */
 function renderAll(){
-  renderMode(); renderPick();
+  renderKind(); renderPick();
   renderSurvey(); renderSurveyAdmin(); renderTimeAdmin();
   renderNotice(); renderRecv(); renderSlots(); renderQtyHint(); renderMenu();
   renderCart(); renderMine(); renderNow(); renderTimeline(); renderBoard(); renderMenuAdmin(); validate();
