@@ -300,7 +300,7 @@ input[type="text"]::placeholder{color:#A8968A}
 
     <div id="orderForm">
       <div class="field" id="fPick" hidden>
-        <h3>1. 픽업 방법</h3>
+        <h3>1. 픽업은 어떻게 하시겠어요?</h3>
         <div class="chips" id="pickChips"></div>
       </div>
 
@@ -309,7 +309,7 @@ input[type="text"]::placeholder{color:#A8968A}
         <input type="text" id="placeFree" placeholder="예: 초1-1, 보건실, 교무실" autocomplete="off" maxlength="24">
       </div>
 
-      <div class="field">
+      <div class="field" id="fRecv">
         <h3 id="hRecv">2. 받는 방법</h3>
         <div class="chips" id="recvChips"></div>
         <p class="recvnote" id="recvNote" hidden></p>
@@ -320,10 +320,6 @@ input[type="text"]::placeholder{color:#A8968A}
         <div class="chips slots" id="slotChips"></div>
       </div>
 
-      <div class="field" id="fQueue" hidden>
-        <h3>3. 받는 순서</h3>
-        <div class="queue" id="queueBox"></div>
-      </div>
 
       <div class="field">
         <h3 id="hMenu">4. 메뉴 고르기</h3>
@@ -346,12 +342,12 @@ input[type="text"]::placeholder{color:#A8968A}
         <p class="qtyhint" id="qtyHint"></p>
       </div>
 
-      <div class="field">
+      <div class="field" id="fCart">
         <h3>담은 메뉴</h3>
         <div class="cart empty" id="cart">아직 담은 메뉴가 없습니다.</div>
       </div>
 
-      <div class="field">
+      <div class="field" id="fWho">
         <h3 id="hWho">7. 주문자 이름</h3>
         <input type="text" id="who" placeholder="예: 김인식 선생님" autocomplete="off" maxlength="20">
       </div>
@@ -553,9 +549,10 @@ const SLOTS = {
       maxOrders, maxCups 는 Apps Script 의 STORE_MAX_ORDERS, STORE_MAX_CUPS 와 같게 맞춥니다. */
 const STORE = { open:'13:50', close:'14:10', maxOrders:20, maxCups:2 };
 const PICKUP = [
-  {v:'매장 이용',        sub:'매장에서 마시고 가요', cups:['매장 컵']},
-  {v:'밖으로 가져갈게요', sub:'포장해서 가져가요',   cups:['1회용 컵','개인 텀블러']}
+  {v:'매장 이용',        sub:'매장에서 마시고 가요'},
+  {v:'밖으로 가져갈게요', sub:'포장해서 가져가요'}
 ];
+const CUPS = ['매장 컵','1회용 컵','개인 텀블러'];
 
 /* 5) 서버가 연결되기 전에 보여 줄 기본 메뉴 (연결되면 시트 내용으로 바뀝니다) */
 const SEED_MENU = [
@@ -1056,12 +1053,7 @@ $('qtyHint').addEventListener('click', function(e){
 function renderRecv(){
   if(isStore()){
     const note = $('recvNote');
-    const pk = PICKUP.find(function(x){ return x.v === pick.pickup; });
-    if(!pk){
-      recvChips.innerHTML = '<p style="margin:0;color:var(--ink-soft);font-size:15px">먼저 픽업 방법을 골라 주세요.</p>';
-      note.hidden = true; return;
-    }
-    recvChips.innerHTML = pk.cups.map(function(c){
+    recvChips.innerHTML = CUPS.map(function(c){
       return '<button data-r="'+esc(c)+'" aria-pressed="'+(pick.cup===c)+'">'+esc(c)+'</button>';
     }).join('');
     note.innerHTML = '<b>번호를 부르면 텀블러를 가지고 와 주세요.</b> 만든 음료를 텀블러에 옮겨 담아 드립니다.';
@@ -1092,19 +1084,8 @@ function renderPick(){
 $('pickChips').addEventListener('click', function(e){
   const b=e.target.closest('button[data-p]'); if(!b) return;
   pick.pickup=b.dataset.p;
-  const pk=PICKUP.find(function(x){ return x.v===pick.pickup; });
-  if(pk.cups.length===1) pick.cup=pk.cups[0];
-  else if(pk.cups.indexOf(pick.cup)<0) pick.cup=null;
-  renderPick(); renderRecv(); validate();
+  renderPick(); validate();
 });
-
-/* ===== 받는 순서 (매장) ===== */
-function renderQueue(){
-  const s = storeNow();
-  $('queueBox').innerHTML = s.remain > 0
-    ? '지금 주문하면 <b>'+s.next+'번</b><p>주문을 보내면 순서 번호를 드립니다. 번호를 부르면 받아 가세요. '+STORE.maxOrders+'번까지 받습니다 (남은 순서 '+s.remain+'개).</p>'
-    : '<b>마감</b><p>오늘 준비한 '+STORE.maxOrders+'번까지 모두 주문을 받았습니다.</p>';
-}
 
 /* ===== 운영 방식에 따라 주문 단계 바꾸기 ===== */
 function renderMode(){
@@ -1115,13 +1096,16 @@ function renderMode(){
     qNum.textContent = 1;
   }
   $('fPick').hidden = !st; $('fPlace').hidden = st;
-  $('fSlot').hidden = st;  $('fQueue').hidden = !st;
+  $('fSlot').hidden = st;
+  /* 매장: 주문자 이름을 받는 방법 바로 뒤(3번)로, 교실 배달: 담은 메뉴 뒤(7번)로 */
+  const who = $('fWho'), anchor = st ? $('fRecv') : $('fCart');
+  if(anchor.nextElementSibling !== who) anchor.parentNode.insertBefore(who, anchor.nextElementSibling);
   $('orderSub').textContent = st
     ? '매장 운영 시간('+sOpen()+'~'+sClose()+')에만 주문을 받습니다. 주문하면 순서 번호를 드립니다.'
     : '바리스타 실습 시간에만 주문을 받습니다. 만들기와 배달도 같은 시간에 이루어집니다.';
   $('hOpt').textContent = st ? '온도 고르기' : '5. 온도';
   $('hQty').innerHTML = st ? '5. 몇 잔 <em>한 번에 '+STORE.maxCups+'잔까지</em>' : '6. 몇 잔';
-  $('hWho').textContent = st ? '6. 주문자 이름' : '7. 주문자 이름';
+  $('hWho').textContent = st ? '3. 주문자 이름' : '7. 주문자 이름';
 
   $('cTumLabel').textContent = st ? '찾아가길 기다림' : '텀블러 대기';
   $('tumTitle').textContent = st ? '다 만들어서 찾아가길 기다리는 중' : '텀블러 기다리는 중';
@@ -1251,10 +1235,10 @@ function validate(){
   else if(isStore()){
     if(!pick.pickup) msg='픽업 방법을 골라 주세요.';
     else if(!pick.cup) msg='받는 방법을 골라 주세요.';
+    else if(!who) msg='주문자 이름을 적어 주세요.';
     else if(!pick.cart.length) msg='메뉴를 담아 주세요.';
     else if(soldIn) msg='품절된 메뉴를 빼 주세요.';
     else if(cartCups() > STORE.maxCups) msg='한 번에 '+STORE.maxCups+'잔까지 주문할 수 있습니다.';
-    else if(!who) msg='주문자 이름을 적어 주세요.';
   }
   else if(!placeValue()) msg='받을 곳을 골라 주세요.';
   else if(!pick.slot) msg='받는 시간을 골라 주세요.';
@@ -1638,7 +1622,7 @@ $('testBtn').onclick=async function(){
   if(isStore()){
     const pk=PICKUP[Math.floor(Math.random()*PICKUP.length)];
     const sp={ mode:'store', who:names[Math.floor(Math.random()*names.length)], pickup:pk.v,
-      cup:pk.cups[Math.floor(Math.random()*pk.cups.length)],
+      cup:CUPS[Math.floor(Math.random()*CUPS.length)],
       items:[{name:m.name, temp:m.temps[Math.floor(Math.random()*m.temps.length)], qty:1+Math.floor(Math.random()*STORE.maxCups)}] };
     try{ await send('order', {payload:JSON.stringify(sp), key:ME+'-t'+Date.now().toString(36)}, 2); }
     catch(err){ toast(err.message || '연습 주문을 넣지 못했습니다.'); }
@@ -1714,7 +1698,7 @@ tabB.onclick=function(){ show('bar'); };
 
 /* ===== 렌더와 주기 작업 ===== */
 function renderAll(){
-  renderMode(); renderPick(); renderQueue();
+  renderMode(); renderPick();
   renderSurvey(); renderSurveyAdmin(); renderTimeAdmin();
   renderNotice(); renderRecv(); renderSlots(); renderQtyHint(); renderMenu();
   renderCart(); renderMine(); renderNow(); renderTimeline(); renderBoard(); renderMenuAdmin(); validate();
@@ -1727,7 +1711,7 @@ function clockTick(){
   const key=(n.team||'-')+'/'+(n.slot?(n.slot.temp?'T'+n.slot.from:n.slot.periods.join('-')):'-')+'/'+state.free+
     (state.free && !n.slot ? '/'+Math.floor((d.getHours()*60+d.getMinutes())/UNIT) : '');
   if(key!==lastSlotKey){ lastSlotKey=key; renderSlots(); }
-  renderNotice(); renderNow(); renderTimeline(); renderQueue(); validate();
+  renderNotice(); renderNow(); renderTimeline(); validate();
 }
 
 function pollTick(){
