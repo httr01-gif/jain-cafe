@@ -107,6 +107,23 @@ input[type="text"]::placeholder{color:#A8968A}
 .state.new{background:#FCF0D8;color:#8A6212}
 .state.making{background:#DDEDE8;color:#1F5648}
 .state.done{background:#E4EFDC;color:#2E5A22}
+.mycard .rate{border:none;background:var(--amber);color:var(--ink);border-radius:10px;padding:10px 12px;font-weight:800;white-space:nowrap}
+.mycard .rated-tag{font-size:13px;font-weight:800;color:var(--leaf);white-space:nowrap}
+/* 만족도 평가 창 */
+.sheet{position:fixed;inset:0;z-index:500;background:rgba(33,22,16,.55);display:flex;align-items:flex-end;justify-content:center}
+.sheet-card{background:var(--paper);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;
+  padding:22px 18px calc(22px + env(safe-area-inset-bottom, 0px))}
+@media (min-width:700px){ .sheet{align-items:center} .sheet-card{border-radius:22px} }
+.sheet-card h2{margin:0 0 4px;font-size:22px}
+.sheet-top{display:flex;align-items:flex-start;gap:10px}
+.sheet-top > div{flex:1}
+.sheet-x{border:2px solid var(--line);background:var(--milk);border-radius:12px;width:48px;height:48px;font-size:22px;font-weight:800;flex:none}
+.sheet-send{margin-top:18px}
+.sheet-send .hint{margin:0 0 8px;min-height:20px;font-size:14px;font-weight:700;color:var(--roast);text-align:center}
+.sheet-send button{width:100%;min-height:58px;border:none;border-radius:14px;background:var(--roast);color:#fff;font-size:19px;font-weight:800}
+.sheet-send button:disabled{background:#CDBFB2}
+.thanks .row2{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.thanks .row2 button.sub2{background:var(--milk);color:var(--ink);border:2px solid var(--line)}
 .mycard .cancel{border:2px solid var(--line);background:var(--milk);border-radius:10px;padding:10px 12px;font-weight:700;color:var(--ink-soft)}
 
 .b-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 20px;background:var(--ink);color:var(--paper)}
@@ -203,7 +220,7 @@ input[type="text"]::placeholder{color:#A8968A}
   text-decoration:line-through;text-decoration-color:rgba(35,23,19,.35)}
 .chips.slots button small{text-decoration:none}
 
-.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);z-index:70;
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);z-index:600;
   background:var(--ink);color:var(--paper);padding:14px 20px;border-radius:12px;
   font-weight:700;max-width:88%;text-align:center;opacity:0;pointer-events:none;
   transition:opacity .2s;box-shadow:0 6px 20px rgba(35,23,19,.25)}
@@ -460,11 +477,16 @@ input[type="text"]::placeholder{color:#A8968A}
   </div>
 </section>
 
-<!-- ===== 만족도 평가 화면 (주소 뒤에 ?v=survey) ===== -->
-<section class="view" id="viewSurvey">
-  <div class="wrap">
-    <h2>드신 음료는 어떠셨나요?</h2>
-    <p class="sub">별을 눌러 알려 주세요. 바리스타 학생들이 다음 실습에 참고합니다.</p>
+<!-- ===== 만족도 평가 창 (내 주문 카드의 '평가하기'로 열림) ===== -->
+<div class="sheet" id="surveySheet" hidden role="dialog" aria-modal="true" aria-labelledby="sTitle">
+  <div class="sheet-card">
+    <div class="sheet-top">
+      <div>
+        <h2 id="sTitle">드신 음료는 어떠셨나요?</h2>
+        <p class="sub" style="margin:0">별을 눌러 알려 주세요. 바리스타 학생들이 다음 실습에 참고합니다.</p>
+      </div>
+      <button class="sheet-x" id="sClose" aria-label="평가 창 닫기">✕</button>
+    </div>
 
     <div id="surveyForm">
       <div class="field">
@@ -481,20 +503,22 @@ input[type="text"]::placeholder{color:#A8968A}
         <div class="stars" id="sService" role="radiogroup" aria-label="서비스 평가"></div>
         <p class="starlabel" id="sServiceLb"></p>
       </div>
+      <div class="sheet-send">
+        <p class="hint" id="sHint"></p>
+        <button id="sSend">평가 보내기</button>
+      </div>
     </div>
 
     <div class="thanks" id="sThanks" hidden>
       <b>평가를 보냈습니다. 고맙습니다!</b>
       <span id="sThanksTxt">바리스타 학생들에게 전해 드릴게요.</span><br>
-      <button id="sAgain">다른 메뉴도 평가하기</button>
+      <div class="row2">
+        <button id="sAgain">다른 메뉴도 평가하기</button>
+        <button class="sub2" id="sDone">닫기</button>
+      </div>
     </div>
   </div>
-
-  <div class="send">
-    <p class="hint" id="sHint"></p>
-    <button id="sSend">평가 보내기</button>
-  </div>
-</section>
+</div>
 
 <div class="flash" id="flash"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -590,7 +614,7 @@ let state = { rev:'0', day:'', orders:[], menu:JSON.parse(JSON.stringify(SEED_ME
               mode:'class', survey:JSON.parse(JSON.stringify(EMPTY_SURVEY)), temp:null, storeTime:null };
 let myIds = [];
 let pick  = { key:null, temp:null, qty:1, cart:[], head:0, recv:'배달', slot:null, pickup:null, cup:null, kind:null };
-let sv    = { menu:null, taste:0, service:0, range:'today' };
+let sv    = { menu:null, taste:0, service:0, range:'today', order:null };
 let readyShown = new Set();
 
 /* 만족도 평가용 기기 표시 — 같은 기기에서 같은 메뉴를 하루에 두 번 평가하지 않도록 */
@@ -1276,6 +1300,11 @@ $('sendBtn').onclick=async function(){
 
 function renderMine(){
   const box=$('mine');
+  const rateBtn=function(o){
+    if(o.status!=='done') return '';
+    const left=orderMenus(o).filter(function(n){ return ratedToday().indexOf(n)<0; });
+    return left.length ? '<button class="rate" data-rate="'+esc(o.id)+'">평가하기</button>' : '<span class="rated-tag">평가 완료</span>';
+  };
   const mine=state.orders.filter(function(o){ return myIds.indexOf(o.id)>=0; }).slice().reverse();
   if(!mine.length){ box.innerHTML=''; return; }
   box.innerHTML='<h3 style="font-size:16px;margin:0">내 주문</h3>'+mine.map(function(o){
@@ -1292,7 +1321,7 @@ function renderMine(){
       (call ? '<em>'+(o.cup==='개인 텀블러' ? '텀블러를 가지고 받으러 와 주세요' : '카운터에서 받아 가세요')+'</em>' : '')+
       '</div>'+
       '<div class="state '+esc(o.status)+'">'+(LABEL_MINE_STORE[o.status]||'')+'</div>'+
-      (o.status==='new'?'<button class="cancel" data-cancel="'+esc(o.id)+'">취소</button>':'')+'</div>';
+      (o.status==='new'?'<button class="cancel" data-cancel="'+esc(o.id)+'">취소</button>':'')+rateBtn(o)+'</div>';
     }
     const tum = o.recv==='텀블러';
     return '<div class="mycard'+(tum && o.status==='ready' ? ' call' : '')+'"><div class="no">'+(+o.no)+'</div>'+
@@ -1301,10 +1330,12 @@ function renderMine(){
     (tum && o.status==='ready' ? '<em>텀블러를 가지고 바리스타실로 와 주세요</em>' : '')+
     '</div>'+
     '<div class="state '+esc(o.status)+'">'+(LABEL_MINE[o.status]||'')+'</div>'+
-    (o.status==='new'?'<button class="cancel" data-cancel="'+esc(o.id)+'">취소</button>':'')+'</div>';
+    (o.status==='new'?'<button class="cancel" data-cancel="'+esc(o.id)+'">취소</button>':'')+rateBtn(o)+'</div>';
   }).join('');
 }
 $('mine').addEventListener('click', async function(e){
+  const r=e.target.closest('button[data-rate]');
+  if(r){ openSurvey(r.dataset.rate); return; }
   const b=e.target.closest('button[data-cancel]'); if(!b || b.disabled) return;
   b.disabled=true;
   try{ await send('cancel', {id:b.dataset.cancel}); toast('주문을 취소했습니다.'); }
@@ -1496,10 +1527,38 @@ function starsHtml(v, kind){
   }
   return h;
 }
+function orderMenus(o){
+  const seen = {}, out = [];
+  (o.items || []).forEach(function(i){ if(!seen[i.name]){ seen[i.name] = 1; out.push(i.name); } });
+  return out;
+}
+function openSurvey(id){
+  const o = state.orders.find(function(x){ return x.id === id; }); if(!o) return;
+  sv.order = id; sv.menu = null; sv.taste = 0; sv.service = 0;
+  const left = orderMenus(o).filter(function(n){ return ratedToday().indexOf(n) < 0; });
+  if(left.length === 1) sv.menu = left[0];
+  $('sTitle').textContent = o.no+'번 주문, 드신 음료는 어떠셨나요?';
+  $('surveyForm').hidden = false; $('sThanks').hidden = true;
+  $('surveySheet').hidden = false; document.body.style.overflow = 'hidden';
+  renderSurvey();
+}
+function closeSurvey(){
+  $('surveySheet').hidden = true; document.body.style.overflow = '';
+  sv.order = null; renderMine();
+}
+$('sClose').onclick = closeSurvey;
+$('sDone').onclick = closeSurvey;
+$('surveySheet').addEventListener('click', function(e){ if(e.target === this) closeSurvey(); });
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !$('surveySheet').hidden) closeSurvey(); });
+
 function renderSurvey(){
+  if(!sv.order) return;
+  const o = state.orders.find(function(x){ return x.id === sv.order; });
+  const names = o ? orderMenus(o) : [];
   const done = ratedToday();
   if(sv.menu && done.indexOf(sv.menu) >= 0) sv.menu = null;
-  $('sMenu').innerHTML = state.menu.map(function(m){
+  $('sMenu').innerHTML = names.map(function(name){
+    const m = state.menu.find(function(x){ return x.name === name; }) || {name:name, liquid:'#C29A6C', foam:false};
     const r = done.indexOf(m.name) >= 0;
     return '<button data-m="'+esc(m.name)+'" aria-pressed="'+(sv.menu===m.name)+'"'+(r?' disabled':'')+'>'+
       cup(m,false)+'<span>'+esc(m.name)+'</span>'+(r?'<span class="rated">평가했어요</span>':'')+'</button>';
@@ -1508,7 +1567,7 @@ function renderSurvey(){
   $('sService').innerHTML = starsHtml(sv.service, 's');
   $('sTasteLb').textContent = STAR_WORD[sv.taste];
   $('sServiceLb').textContent = STAR_WORD[sv.service];
-  const left = state.menu.some(function(m){ return done.indexOf(m.name) < 0; });
+  const left = names.some(function(n){ return done.indexOf(n) < 0; });
   $('sAgain').hidden = !left;
   validateSurvey();
 }
@@ -1540,7 +1599,7 @@ $('sSend').onclick=async function(){
   try{
     await send('survey', {menu:name, taste:sv.taste, service:sv.service, dev:DEV}, 3);
     markRated(name);
-    sv = {menu:null, taste:0, service:0, range:sv.range};
+    sv = {menu:null, taste:0, service:0, range:sv.range, order:sv.order};
     $('surveyForm').hidden=true; $('sThanks').hidden=false;
     $('sThanksTxt').textContent = name+' 평가를 바리스타 학생들에게 전해 드릴게요.';
   }catch(e){
@@ -1551,7 +1610,10 @@ $('sSend').onclick=async function(){
   }
 };
 $('sAgain').onclick=function(){
-  $('sThanks').hidden=true; $('surveyForm').hidden=false; renderSurvey(); window.scrollTo(0,0);
+  const o = state.orders.find(function(x){ return x.id === sv.order; });
+  const left = o ? orderMenus(o).filter(function(n){ return ratedToday().indexOf(n) < 0; }) : [];
+  sv.menu = left.length === 1 ? left[0] : null;
+  $('sThanks').hidden=true; $('surveyForm').hidden=false; renderSurvey();
 };
 
 /* ===== 주문 시간 관리 (관리자) ===== */
@@ -1671,7 +1733,6 @@ function show(which){
   curView = which;
   $('viewOrder').classList.toggle('is-on', which==='order');
   $('viewBar').classList.toggle('is-on', which==='bar');
-  $('viewSurvey').classList.toggle('is-on', which==='survey');
   tabO.setAttribute('aria-pressed', which==='order'); tabB.setAttribute('aria-pressed', which==='bar');
   window.scrollTo(0,0);
 }
@@ -1682,17 +1743,12 @@ tabB.onclick=function(){ show('bar'); };
    기본 주소            : 주문 화면만 (교직원에게 공유하는 주소)
    주소 뒤에 ?v=bar     : 바리스타 화면만 (바리스타실 태블릿)
    주소 뒤에 ?v=all     : 두 화면 모두 (교사 점검용)
-   주소 뒤에 ?v=survey  : 만족도 평가 화면만 (QR 코드로 안내하는 주소)
    교직원이 실수로 주문 상태를 바꾸는 일을 막기 위해 기본값을 주문 화면으로 잠급니다. */
 (function(){
   const v = new URLSearchParams(location.search).get('v');
   if(v !== 'all'){ $('adminZone').hidden = true; $('testBtn').hidden = true; }
   if(v === 'all') return;
-  if(v === 'survey'){
-    document.querySelector('.switcher .brand').innerHTML = '자인 카페 <span>만족도 평가</span>';
-    document.title = '자인 카페 만족도 평가';
-  }
-  show(v === 'bar' ? 'bar' : (v === 'survey' ? 'survey' : 'order'));
+  show(v === 'bar' ? 'bar' : 'order');
   document.querySelector('.switcher').classList.add('locked');
 })();
 
